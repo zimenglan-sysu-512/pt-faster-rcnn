@@ -1,0 +1,34 @@
+MODEL_NAME: pts
+EXP_DIR: person.torso/VGG16/torso.only.21
+IS_EXP_DIR: True
+USE_GPU_NMS: True
+TASK_NAME: person.torso
+FAST_RCNN_TYPE: torso.only.21
+MAX_ITERS: "80000,40000,80000,40000"
+STAGE1_RPN_SOLVER60K80K: stage1_rpn_solver60k80k.pt
+STAGE1_FAST_RCNN_SOLVER30K40K: stage1_fast_rcnn_solver30k40k.pt
+STAGE2_RPN_SOLVER60K80K: stage2_rpn_solver60k80k.pt
+STAGE2_FAST_RCNN_SOLVER30K40K: stage2_fast_rcnn_solver30k40k.pt
+TRAIN:
+  HAS_RPN: True
+  MAX_SIZE: 1000
+  SCALES: !!python/tuple [600, ]
+  RPN_IMS_PER_BATCH: 1
+  FAST_RCNN_IMS_PER_BATCH: 4
+  ## cache
+  DATA: "caches"
+  CACHE: "person.torso/vgg16/torso.only.21.cache"
+  ## input
+  D_INPUT_LAB_DIR: labels/
+  D_INPUT_IMG_DIR: images/
+  D_INPUT_FILE: torso.train.log
+  D_INPUT_DIR: /home/ddk/malong/dataset/person.torso/
+  ## cache
+  RPN_STAGE1_DIR: stage1/
+  RPN_STAGE2_DIR: stage2/
+  RPN_CACHE_DIR: /home/ddk/malong/dataset/caches/person.torso/torso.only.21/rpn_cache/
+  ROIDBS_STAGE1_DIR: stage1/
+  ROIDBS_STAGE2_DIR: stage2/
+  ROIDBS_CACHE_DIR: /home/ddk/malong/dataset/caches/person.torso/torso.only.21/roidbs_cache/
+TEST:
+  HAS_RPN: True

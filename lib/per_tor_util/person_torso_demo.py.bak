@@ -1,0 +1,666 @@
+#!/usr/bin/env python
+#-*-coding: utf8-*-
+# --------------------------------------------------------
+# Faster R-CNN
+# Copyright (c) 2015 Microsoft
+# Licensed under The MIT License [see LICENSE for details]
+# Written by Ross Girshick
+# --------------------------------------------------------
+
+"""
+Demo script showing detections in sample images.
+
+See README.md for installation instructions before running.
+"""
+
+import _init_paths
+from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list
+from fast_rcnn.test import im_detect
+from fast_rcnn.nms_wrapper import nms
+from utils.timer import Timer
+import cv2
+import math
+import caffe
+import pprint
+import os, sys
+import argparse
+import numpy as np
+import scipy.io as sio
+import matplotlib.pyplot as plt
+
+ConstChar = "CC"
+
+def create_dir(path):
+  if not os.path.isdir(path):
+    os.makedirs(path)  
+  else:
+    print path, "has exists."
+    print
+
+def init_net_classes(args):
+  '''
+  Initialize the classes and nets...
+  '''
+  CLASSES = []
+  cls_filepath = args.cls_filepath
+  if cls_filepath is not None:
+    cls_filepath = cls_filepath.strip()
+  else:
+    cls_filepath = ""
+  if len(cls_filepath) > 0 and os.path.exists(cls_filepath):
+    # Open and Read
+    with open(cls_filepath) as f:
+      CLASSES = [x.strip().lower() for x in f.readlines()]
+    CLASSES = tuple(CLASSES)
+  if len(CLASSES) <= 0:
+    print
+    print "Missing cls_filepath"
+    print "Here we use PascalVoc2012 object classes ..."
+    CLASSES = ('__background__', # always index 0
+                   'aeroplane', 'bicycle', 'bird', 'boat',
+                   'bottle', 'bus', 'car', 'cat', 'chair',
+                   'cow', 'diningtable', 'dog', 'horse',
+                   'motorbike', 'person', 'pottedplant',
+                   'sheep', 'sofa', 'train', 'tvmonitor')
+
+  NETS = {'vgg16': ('VGG16',
+                  'VGG16_faster_rcnn_final.caffemodel'),
+        'zf': ('ZF',
+                  'ZF_faster_rcnn_final.caffemodel')}
+  print "cls_filepath", cls_filepath
+  print "Class Names:"
+  print CLASSES
+  print 
+  print "NETS:"
+  print NETS
+  print
+  return CLASSES, NETS
+
+def get_test_data_from_file(in_img_file):
+  im_names, objs = [], []
+  with open(in_img_file) as f:
+    for x in f.readlines():
+      info = x.strip().split()
+      imgidx = info[0].strip() + img_ext
+      im_names.append(imgidx)
+      info = info[1:]
+      if len(info) % 6 != 0:
+        print "invalid input:", x
+        sys.exit(1)
+      for idx in range(0, len(info) / 6):
+        idx = idx * 6
+        objidx = int(info[idx + 0].strip())
+        x1   = float(info[idx + 1].strip())
+        y1   = float(info[idx + 2].strip())
+        x2   = float(info[idx + 3].strip())
+        y2   = float(info[idx + 4].strip())
+        cls   =      info[idx + 5].strip().lower()
+        if x1 > x2:
+          x1, x2 = x2, x1
+        if y1 > y2:
+          y1, y2 = y2, y1
+        ltuple = (objidx, x1, y1, x2, y2, cls)
+        objs.append(ltuple)
+  return im_names
+
+def vis_detections(im, class_name, dets, im_name, img_output_dir, \
+    thresh=0.5, img_ext=".jpg"):
+  """Draw detected bounding boxes."""
+  inds = np.where(dets[:, -1] >= thresh)[0]
+  if len(inds) == 0:
+      return
+
+  im = im[:, :, (2, 1, 0)]
+  fig, ax = plt.subplots(figsize=(12, 12))
+  ax.imshow(im, aspect='equal')
+  for i in inds:
+      bbox = dets[i, :4]
+      score = dets[i, -1]
+
+      ax.add_patch(
+          plt.Rectangle((bbox[0], bbox[1]),
+                        bbox[2] - bbox[0],
+                        bbox[3] - bbox[1], fill=False,
+                        edgecolor='red', linewidth=3.5)
+          )
+      ax.text(bbox[0], bbox[1] - 2,
+              '{:s} {:.3f}'.format(class_name, score),
+              bbox=dict(facecolor='blue', alpha=0.5),
+              fontsize=14, color='white')
+
+  ax.set_title(('{} detections with '
+                'p({} | box) >= {:.1f}').format(class_name, class_name,
+                                                thresh),
+                fontsize=14)
+  plt.axis('off')
+  plt.tight_layout()
+  # Save the image
+  if img_output_dir and len(img_output_dir) > 0:
+    im_name = im_name.rsplit(".", 1)[0]
+    imagepath = img_output_dir + im_name + img_ext
+    print "imagepath:", imagepath
+    plt.savefig(imagepath)
+  else:
+    print "show image..."
+    # plt.draw()
+    plt.show()
+  # Clear the figure handler
+  plt.clf()
+
+def vis_detections2(im, class_name, dets, im_name, img_output_dir, \
+    thresh=0.5, img_ext=".jpg"):
+  """Draw detected bounding boxes."""
+  inds = np.where(dets[:, -1] >= thresh)[0]
+  if len(inds) == 0:
+    return
+  im = im[:, :, (2, 1, 0)]
+  plt.imshow(im)
+  # Show the results as the tile form
+  sub_title = "%s detections with p(%s | box) >= {:.1f}" \
+      % (class_name, class_name)
+  plt.suptitle(sub_title)
+  # Draw bboxes
+  for i in inds:
+    bbox = dets[i, :4]
+    score = dets[i, -1]
+    plt.gca().add_patch(
+        plt.Rectangle((bbox[0], bbox[1]), 
+                       bbox[2] - bbox[0],
+                       bbox[3] - bbox[1], 
+                       fill=False, edgecolor='r', linewidth=3)
+        )
+  # Save the image
+  if img_output_dir and len(img_output_dir) > 0:
+    im_name = im_name.rsplit(".", 1)[0]
+    imagepath = img_output_dir + im_name + img_ext
+    print "imagepath:", imagepath
+    plt.savefig(imagepath)
+  else:
+    print "show image..."
+    plt.show()
+  # Clear the figure handler
+  plt.clf()
+
+def torso2person(t_bbox, w, h, t_ratio=0.72):
+  # Torso
+  x1 = t_bbox[0]
+  y1 = t_bbox[1]
+  x2 = t_bbox[2]
+  y2 = t_bbox[3]
+  # Person
+  diff_x = x1 - x2
+  diff_y = y1 - y2
+  t_dit = diff_x * diff_x + diff_y * diff_y
+  t_dit = math.sqrt(t_dit)
+  t_dit = int(t_dit * t_ratio)
+  px1 = x1 - t_dit
+  py1 = y1 - t_dit
+  px2 = x2 + t_dit
+  py2 = y2 + t_dit
+  px1 = max(1, px1)
+  py1 = max(1, py1)
+  px2 = min(w - 2, px2)
+  py2 = min(h - 2, py2)
+  p_bbox = [px1, py1, px2, py2]
+  return p_bbox
+
+def parse_args():
+  """Parse input arguments."""
+  parser = argparse.ArgumentParser(description='Faster R-CNN demo')
+  parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
+                      default=0, type=int)
+  parser.add_argument('--cpu', dest='cpu_mode',
+                      help='Use CPU mode (overrides --gpu)',
+                      action='store_true')
+  # specific the type of network
+  parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16]',
+                      default='vgg16')
+  # cfg_file
+  parser.add_argument('--cfg_file', dest='cfg_file',
+                      help='optional config file', default=None, type=str)
+  # prototxt
+  parser.add_argument('--def', dest='prototxt',
+                      help='prototxt file defining the network',
+                      default=None, type=str)
+  # caffemodel 
+  parser.add_argument('--caffemodel', dest='caffemodel',
+                      help='model to test',
+                      default=None, type=str)
+  # input images' directory 
+  parser.add_argument('--input', dest='input_img_dir',
+                      help='the images to test',
+                      default="", type=str, required=True)
+  # input images' directory 
+  parser.add_argument('--output', dest='output_img_dir',
+                      help='the images to visualize and save',
+                      default="", type=str, required=True)
+  # input images' file
+  parser.add_argument('--in_img_file', dest='in_img_file',
+                      help='read input from file',
+                      default="", type=str)
+  # input images' file
+  parser.add_argument('--img_ext', dest='img_ext',
+                      help='read input from file',
+                      default=".jpg", type=str)
+  # cls_list -- target classes
+  parser.add_argument('--cls_list', dest='cls_list',
+                      help='the classes to specific, using `,` to seperate',
+                      default=None, type=str)
+  # cls_filepath
+  parser.add_argument('--cls_filepath', dest='cls_filepath',
+                      help='the path to the classes\' file',
+                      default="", type=str)
+  # is_cap_by_video
+  parser.add_argument('--is_cap_by_video', dest='is_cap_by_video',
+                      help='images from video captured by camera..',
+                      default=False, type=bool)
+  # is_merge
+  parser.add_argument('--is_merge', dest='is_merge',
+                      help='merge the bboxes',
+                      default=False, type=bool)
+  # iou
+  parser.add_argument('--iou', dest='iou',
+                      help='IoU',
+                      default=False, type=bool)
+  # out_tp_file (torso | person)
+  parser.add_argument('--out_tp_file', dest='out_tp_file',
+                      help='Restore the results of torso detection into file..',
+                      default="", type=str)
+  # parse
+  args = parser.parse_args()
+  return args
+
+def init_parse():
+  # Use RPN for proposals
+  cfg.TEST.HAS_RPN = True  
+  # Get params from command line
+  args = parse_args()
+  print('Called with args:')
+  print(args)
+  # Load cfg_file
+  cfg_file = args.cfg_file.strip()
+  cfg_file = "" if cfg_file == ConstChar else cfg_file
+  if cfg_file is not None and len(cfg_file) > 0:
+    cfg_from_file(cfg_file)
+  print('Using config:')
+  pprint.pprint(cfg)
+  print
+  print
+  # Set root directory
+  root_dir = cfg.ROOT_DIR
+  root_dir = "" if root_dir == ConstChar else root_dir
+  print "ROOT_DIR:", root_dir
+  # Get input and output images directories
+  img_ext = args.img_ext
+  in_img_file = args.in_img_file.strip()
+  in_img_file = "" if in_img_file == ConstChar else in_img_file
+  # out_tp_file
+  out_tp_file = args.out_tp_file.strip()
+  out_tp_file = "" if out_tp_file == ConstChar else out_tp_file
+  # input_img_dir
+  input_img_dir = args.input_img_dir.strip()
+  input_img_dir = "" if input_img_dir == ConstChar else input_img_dir
+  # output_img_dir
+  output_img_dir = args.output_img_dir.strip()
+  output_img_dir = "" if output_img_dir == ConstChar else output_img_dir
+  if output_img_dir and len(output_img_dir) > 0:
+    create_dir(output_img_dir)
+  # Get classes list to classify and localize
+  cls_list = args.cls_list
+  cls_list = "" if cls_list == ConstChar else cls_list
+  print cls_list
+  if cls_list is None or len(cls_list.strip()) <= 0:
+    cls_list = []
+  else:
+    cls_list = cls_list.strip().split(",")
+    cls_list = [cl.strip() for cl in cls_list if len(cl.strip()) > 0]
+  print
+  print "input_img_dir:", input_img_dir
+  print "output_img_dir:", output_img_dir
+  print "cls_list:", cls_list
+  # Init
+  CLASSES, NETS = init_net_classes(args)
+  # Get test prototxt
+  prototxt = args.prototxt.strip()
+  prototxt = "" if prototxt == ConstChar else prototxt
+  if prototxt and len(prototxt) > 0 and os.path.exists(prototxt):
+    print "prototxt from sh:", prototxt
+  else:
+    prototxt = os.path.join(root_dir, 'models', NETS[args.demo_net][0],
+                              'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
+    print "prototxt from default:", prototxt
+  if not os.path.isfile(prototxt):
+    raise IOError(('{:s} not found.\n').format(prototxt))
+  # Get trained caffemodel
+  caffemodel = args.caffemodel.strip()
+  caffemodel = "" if caffemodel == ConstChar else caffemodel
+  if caffemodel and len(caffemodel) > 0 and os.path.exists(caffemodel):
+    print "caffemodel from sh:", caffemodel
+  else:
+    caffemodel = os.path.join(root_dir, 'data', 'faster_rcnn_models',
+                                NETS[args.demo_net][1])
+    print "caffemodel from default:", caffemodel
+  if not os.path.isfile(caffemodel):
+    raise IOError(('{:s} not found.\n').format(caffemodel))
+  # Check & Print
+  if prototxt is None or caffemodel is None:
+    raise IOError(('{:s} not found.\n').format(prototxt))
+  print
+  # Set CPU or GPU
+  if args.cpu_mode:
+    caffe.set_mode_cpu()
+  else:
+    caffe.set_mode_gpu()
+    caffe.set_device(args.gpu_id)
+    cfg.GPU_ID = args.gpu_id
+  # Init network
+  net = caffe.Net(prototxt, caffemodel, caffe.TEST)
+  print
+  print '\n\nLoaded network {:s}'.format(caffemodel)
+  print 
+  return args, net, cls_list, CLASSES, input_img_dir, output_img_dir, \
+      in_img_file, out_tp_file, img_ext
+
+if __name__ == '__main__':
+  """Demo for human or torso detection"""
+  # Init network
+  args, net, cls_list, CLASSES, input_img_dir, \
+      output_img_dir, in_img_file, out_tp_file, img_ext = init_parse()
+  # Warmup on a dummy image
+  im = 128 * np.ones((300, 500, 3), dtype=np.uint8)
+  for i in xrange(2):
+    im_detect(net, im)
+
+  def demo4image(net, im_name, cls_list, NMS_THRESH = 0.3, \
+      CONF_THRESH = 0.8, is_merge=False, iou=False):
+    """Detect object classes in an image using pre-computed object proposals."""
+    im_file = input_img_dir + im_name
+    print 'Demo for {}'.format(im_file)
+    timer = Timer()
+    timer.tic()
+    im = cv2.imread(im_file)
+    scores, boxes = im_detect(net, im)
+    
+    CLS_FLAG = cls_list is not None and len(cls_list) > 0
+    for cls_ind, cls in enumerate(CLASSES[1:]):
+      if CLS_FLAG and cls not in cls_list:
+        continue
+      cls_ind += 1 
+      cls_boxes  = boxes[:, 4 * cls_ind: 4 * (cls_ind + 1)]
+      cls_scores = scores[:, cls_ind]
+      dets = np.hstack((cls_boxes,
+                        cls_scores[:, np.newaxis])).astype(np.float32)
+      keep = nms(dets, NMS_THRESH, is_merge=is_merge, iou=iou)
+      dets = dets[keep, :]
+      vis_detections(im, cls, dets, im_name, output_img_dir, thresh=CONF_THRESH)
+
+    timer.toc()
+    print "Detection took %ss for %s object proposals" \
+        % (timer.total_time, boxes.shape[0])
+
+  def demo4image_V2(net, im_name, cls_list, NMS_THRESH = 0.3, \
+    CONF_THRESH = 0.6, is_merge=False, iou=False):
+    """Detect object classes in an image using pre-computed object proposals."""
+    im_file = input_img_dir + im_name
+    print 'Demo for {}'.format(im_file)
+    timer = Timer()
+    timer.tic()
+    im = cv2.imread(im_file)
+    scores, boxes = im_detect(net, im)
+
+    CLS_FLAG = cls_list is not None and len(cls_list) > 0
+    for cls_ind, cls in enumerate(CLASSES[1:]):
+      if CLS_FLAG and cls not in cls_list:
+        print "nothing at all"
+        continue
+      cls_ind   += 1 
+      cls_boxes  = boxes[:, 4 * cls_ind: 4 * (cls_ind + 1)]
+      cls_scores = scores[:, cls_ind]
+      dets = np.hstack((cls_boxes,
+                       cls_scores[:, np.newaxis])).astype(np.float32)
+      keep = nms(dets, NMS_THRESH, is_merge=is_merge, iou=iou)
+      dets = dets[keep, :]
+      inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
+      if len(inds) == 0:
+        continue
+      for i in inds:
+        bbox  = dets[i, :4]
+        bbox  = [int(b) for b in bbox]
+        score = dets[i, -1]
+        p1    = (bbox[0], bbox[1])
+        p2    = (bbox[2], bbox[3])
+        cv2.rectangle(im, p1, p2, (38, 231, 16), 2)
+        p3    = (bbox[0], bbox[1] - 5)
+        cv2.putText(im, '{:s} {:s}'.format(cls, str(score),), p3, \
+            cv2.FONT_HERSHEY_SIMPLEX, .56, (123, 19, 208), 1)
+        
+    im_name = im_name.rsplit(".", 1)[0]
+    print "out dir" + output_img_dir
+    if output_img_dir and len(output_img_dir) > 0:
+      imagepath = output_img_dir + im_name + ".jpg"
+      cv2.imwrite(imagepath, im)
+    else:
+      cv2.imshow(im_name, im)
+      cv2.waitKey(1)
+      cv2.destroyAllWindows()
+
+    timer.toc()
+    print "Detection took %ss for %s object proposals" \
+        % (timer.total_time, boxes.shape[0])
+
+  def demo4image_V3(net, im_name, cls_list, NMS_THRESH = 0.3, \
+    CONF_THRESH = 0.6, is_merge=False, iou=False):
+    """Detect object classes in an image using pre-computed object proposals."""
+    im_file = input_img_dir + im_name
+    print 'Demo for {}'.format(im_file)
+    timer = Timer()
+    timer.tic()
+    im = cv2.imread(im_file)
+    scores, boxes = im_detect(net, im)
+
+    CLS_FLAG = cls_list is not None and len(cls_list) > 0
+    for cls_ind, cls in enumerate(CLASSES[1:]):
+      if CLS_FLAG and cls not in cls_list:
+        print "nothing at all"
+        continue
+      
+      cls_ind    += 1 
+      cls_scores = scores[:, cls_ind]
+      cls_boxes  = boxes[:, 4 * cls_ind: 4 * (cls_ind + 1)]
+      order      = cls_scores.argsort()[::-1]
+      obj_ind    = order[0]
+      score      = cls_scores[obj_ind]
+      bbox       = boxes[obj_ind, 4 * cls_ind: 4 * (cls_ind + 1)]
+      bbox       = [int(b) for b in bbox]
+
+      cls   = CLASSES[cls_ind]
+      p1    = (bbox[0], bbox[1])
+      p2    = (bbox[2], bbox[3])
+      cv2.rectangle(im, p1, p2, (38, 231, 16), 2)
+      p3    = (bbox[0], bbox[1] - 5)
+      cv2.putText(im, '{:s} {:s}'.format(cls, str(score),), p3, \
+          cv2.FONT_HERSHEY_SIMPLEX, .56, (123, 19, 208), 1)
+        
+    im_name = im_name.rsplit(".", 1)[0]
+    print "out dir" + output_img_dir
+    if output_img_dir and len(output_img_dir) > 0:
+      imagepath = output_img_dir + im_name + ".jpg"
+      cv2.imwrite(imagepath, im)
+    else:
+      cv2.imshow(im_name, im)
+      cv2.waitKey(1)
+      cv2.destroyAllWindows()
+
+    timer.toc()
+    print "Detection took %ss for %s object proposals" \
+        % (timer.total_time, boxes.shape[0])
+
+  def demo4image2file(net, im_name, cls_list, fhd, NMS_THRESH = 0.3, \
+      CONF_THRESH = 0.8, t_ratio=0.72, is_merge=False, iou=False):
+    """
+    Detect object classes in an image using pre-computed object proposals.
+    And write the results of bboxes into file by file handler `fhd`
+    """
+    im_file = input_img_dir + im_name
+    print 'Demo for {}'.format(im_file)
+    timer = Timer()
+    timer.tic()
+    im = cv2.imread(im_file)
+    print im.shape
+    scores, boxes = im_detect(net, im)
+    timer.toc()
+    print "Detection took %ss for %s object proposals" \
+        % (timer.total_time, boxes.shape[0])
+    CLS_FLAG = cls_list is not None and len(cls_list) > 0
+    for cls_ind, cls in enumerate(CLASSES[1:]):
+      if CLS_FLAG and cls not in cls_list:
+        continue
+      cls_ind += 1 
+      cls_boxes = boxes[:, 4 * cls_ind: 4 * (cls_ind + 1)]
+      cls_scores = scores[:, cls_ind]
+      dets = np.hstack((cls_boxes,
+                        cls_scores[:, np.newaxis])).astype(np.float32)
+      keep = nms(dets, NMS_THRESH, is_merge=is_merge, iou=iou)
+      dets = dets[keep, :]
+      inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
+      if len(inds) == 0:
+        return
+      h, w, _ = im.shape
+      print output_img_dir
+      print im_name
+      print
+      rstr = input_img_dir.strip() + " " + im_name.strip()
+      for i in inds:
+        score = dets[i, -1]
+        score = str(score)
+        t_bbox = dets[i, :4]
+        p_bbox = torso2person(t_bbox, w, h, t_ratio)
+        t_bbox = [str(int(b)) for b in t_bbox]
+        p_bbox = [str(int(b)) for b in p_bbox]
+        t_bbox = " ".join(t_bbox).strip()
+        p_bbox = " ".join(p_bbox).strip()
+        rstr = rstr  + " " + score + " " + t_bbox + " " + p_bbox
+      fhd.write(rstr.strip() + "\n")
+
+  def demo4video(net, im, cls_list, imagepath="", NMS_THRESH = 0.3, \
+      CONF_THRESH = 0.8, t_ratio=0.7, is_merge=False, iou=False):
+    """Detect object classes in an image using pre-computed object proposals."""
+    timer = Timer()
+    timer.tic()
+    scores, boxes, _ = im_detect(net, im)
+    timer.toc()
+    print "Detection took %ss for %s object proposals" \
+        % (timer.total_time, boxes.shape[0])
+    CLS_FLAG = cls_list is not None and len(cls_list) > 0
+    for cls_ind, cls in enumerate(CLASSES[1:]):
+      if CLS_FLAG and cls not in cls_list:
+        continue
+      cls_ind += 1 
+      cls_boxes = boxes[:, 4 * cls_ind: 4 * (cls_ind + 1)]
+      cls_scores = scores[:, cls_ind]
+      dets = np.hstack((cls_boxes,
+                        cls_scores[:, np.newaxis])).astype(np.float32)
+      keep = nms(dets, NMS_THRESH)
+      dets = dets[keep, :]
+      # Draw bboxes
+      inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
+      if len(inds) == 0:
+        cv2.imshow("frame", im)
+        return
+      # Shape
+      h, w, _ = im.shape
+      for i in inds:
+        bbox = dets[i, :4]
+        bbox = [int(b) for b in bbox]
+        score = dets[i, -1]
+        # Torso
+        x1 = bbox[0]
+        y1 = bbox[1]
+        x2 = bbox[2]
+        y2 = bbox[3]
+        # Person
+        diff_x = x1 - x2
+        diff_y = y1 - y2
+        t_dit = math.sqrt(diff_x * diff_x + diff_y * diff_y)
+        t_dit = int(t_dit * t_ratio)
+        px1 = x1 - t_dit
+        py1 = y1 - t_dit
+        px2 = x2 + t_dit
+        py2 = y2 + t_dit
+        px1 = max(0, px1)
+        py1 = max(0, py1)
+        px2 = min(w - 1, px2)
+        py2 = min(h - 1, py2)
+        # Draw torso
+        p1 = (x1, y1)
+        p2 = (x2, y2)
+        cv2.rectangle(im, p1, p2, (38, 231, 16), 2)
+        p3 = (x1, y1 - 3)
+        cv2.putText(im, '{:s} {:.3f}'.format(cls, score), p3, \
+            cv2.FONT_HERSHEY_SIMPLEX, .36, (23, 119, 188))
+        # # Draw person
+        # p1 = (px1, py1)
+        # p2 = (px2, py2)
+        # cv2.rectangle(im, p1, p2, (38, 231, 16), 2)
+        # p3 = (px1, py1 - 3)
+        # cv2.putText(im, "Person", p3, \
+        #     cv2.FONT_HERSHEY_SIMPLEX, .36, (123, 19, 188))
+      cv2.imshow("frame", im)
+
+  if args.is_cap_by_video:
+    # Init camera
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+      print 'No camera found'
+      sys.exit(1) 
+    im_c = 1
+    while(True):
+      # Capture frame-by-frame
+      ret, im = cap.read()
+      if im is not None and im.shape[0] != 0:
+        print "Processing %s image..." % (im_c,)
+        demo4video(net, im, cls_list, is_merge=args.is_merge, iou=args.iou)
+        im_c = im_c + 1
+      # Whether close video handler
+      if cv2.waitKey(10) & 0xFF == ord('q'):
+        break
+    # When everything done, release the capture
+    cap.release()
+    cv2.destroyAllWindows()
+  else:
+    if os.path.exists(in_img_file) and os.path.isfile(in_img_file):
+      im_names = get_test_data_from_file(in_img_file)
+    else:
+      im_names = os.listdir(input_img_dir)
+    im_names = [im_name.strip() for im_name in im_names]
+    im_names.sort()
+    
+    t_timer = Timer()
+    t_timer.tic()
+    # Starting Detection.
+    if out_tp_file and len(out_tp_file) > 0:
+      im_c = 1
+      fhd = open(out_tp_file, "w")
+      for im_name in im_names:
+        print
+        print "Process %s-th image...(file)" % (im_c,)
+        demo4image2file(net, im_name, cls_list, fhd, \
+            is_merge=args.is_merge, iou=args.iou)
+        im_c = im_c + 1
+      fhd.close()
+    else:
+      im_c = 1
+      for im_name in im_names:
+        print
+        print "Process %s-th image...(image)" % (im_c,)
+        demo4image_V3(net, im_name, cls_list, \
+            is_merge=args.is_merge, iou=args.iou)
+        im_c = im_c + 1
+
+    t_timer.toc()
+    print "Detection took %ss for %s images" \
+        % (t_timer.total_time, len(im_names))
+    
+  print
+  print "Detection has been done."
+  print

@@ -1,0 +1,6 @@
+EXP_DIR: person.torso/VGG16/per.tor.test/only.21
+USE_GPU_NMS: True
+TEST:
+  HAS_RPN: True
+  MAX_SIZE: 1000
+  SCALES: !!python/tuple [600, ]

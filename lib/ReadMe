@@ -1,0 +1,39 @@
+before you make, remove these files if exist.
+	utils/bbox.c nms/cpu_nms.c nms/gpu_nms.cpp
+
+op like:
+	cd lib
+	rm rm utils/bbox.c nms/cpu_nms.c nms/gpu_nms.cpp
+	make
+
+if you use aws K520 GPU, please modify the code in setup.py:
+	'nvcc': ['-arch=sm_35',
+into 
+	'nvcc': ['-arch=sm_30',
+since aws K520 GPU does not support the `sm_35`
+
+also, you must modify the `Makefile.config` file in caffe directory,
+op like:
+	cd ../caffe
+	cp Makefile.config.example Makefile.config # if not exist
+	vim Makefile.config
+		rm `-gencode arch=compute_20,code=sm_20`
+		rm `-gencode arch=compute_20,code=sm_21`
+		rm `-gencode arch=compute_35,code=sm_35`
+
+and then:
+	make clean
+	make -j8
+	make pycaffe -j8
+
+if you use more powerful GPU, you may skip above ops. 
+just do this:
+	cd lib/ && make
+	cd ../caffe && cp Makefile.config.example Makefile.config
+	make clean
+	make -j8
+	make pycaffe -j8
+
+---
+
+

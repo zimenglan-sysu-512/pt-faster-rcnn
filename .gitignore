@@ -1,0 +1,17 @@
+*.pyc
+*.caffemodel
+*.pkl
+.ipynb_checkpoints
+lib/build
+logs/
+output/
+caches/
+experiments/logs/
+data/imagenet_models/
+data/faster_rcnn_models/
+data/selective_search_data/
+data/selective_search_data
+data/VOCdevkit2007/
+data/VOCdevkit2012/
+*.tar.gz
+*.zip
