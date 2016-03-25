@@ -22,6 +22,6 @@ TRAIN:
   D_INPUT_LAB_DIR: labels/
   D_INPUT_IMG_DIR: up.crop.color/
   D_INPUT_FILE: up.crop.color2_train_torso_l7.log
-  D_INPUT_DIR: /home/d302/dongdk/dataset/kinect2/
+  D_INPUT_DIR: /home/d302/dongdk/dataset/Kinect2/
 TEST:
   HAS_RPN: True
