@@ -1,0 +1,27 @@
+MODEL_NAME: pts
+EXP_DIR: person.torso/VGG16/kinect2.torso.21
+IS_EXP_DIR: True
+USE_GPU_NMS: True
+TASK_NAME: person.torso
+FAST_RCNN_TYPE: kinect2.torso.21
+MAX_ITERS: "223780,111890,223780,111890"
+STAGE1_RPN_SOLVER60K80K: stage1_rpn_solver60k80k.pt
+STAGE1_FAST_RCNN_SOLVER30K40K: stage1_fast_rcnn_solver30k40k.pt
+STAGE2_RPN_SOLVER60K80K: stage2_rpn_solver60k80k.pt
+STAGE2_FAST_RCNN_SOLVER30K40K: stage2_fast_rcnn_solver30k40k.pt
+TRAIN:
+  HAS_RPN: True
+  MAX_SIZE: 600
+  SCALES: !!python/tuple [360, ]
+  RPN_IMS_PER_BATCH: 1
+  FAST_RCNN_IMS_PER_BATCH: 2
+  ## cache
+  DATA: "caches"
+  CACHE: "person.torso/vgg16/kinect2.torso.21.cache"
+  ## input
+  D_INPUT_LAB_DIR: labels/
+  D_INPUT_IMG_DIR: up.crop.color/
+  D_INPUT_FILE: up.crop.color2_train_torso_l7.log
+  D_INPUT_DIR: ~/dongdk/dataset/kinect2/
+TEST:
+  HAS_RPN: True

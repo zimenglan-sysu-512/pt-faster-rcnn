@@ -13,5 +13,8 @@ data/selective_search_data/
 data/selective_search_data
 data/VOCdevkit2007/
 data/VOCdevkit2012/
+lib/utils/bbox.c
+lib/nms/cpu_nms.c
+lib/nms/gpu_nms.cpp
 *.tar.gz
 *.zip
