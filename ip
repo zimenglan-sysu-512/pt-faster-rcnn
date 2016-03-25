@@ -1,0 +1,2 @@
+clone:
+	git clone --recursive -b ddk ddk@172.18.180.86:/home/ddk/git-server/pt-fast-rcnn.git

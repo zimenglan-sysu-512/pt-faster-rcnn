@@ -4,7 +4,7 @@
 # Example:
 # 	RootDir=~/dongdk/pt-faster_rcnn/
 # 	cd $RootDir
-# 	./pts/person.torso/VGG16/kinect2.torso.21/train_torso.sh 0 VGG16 --set RNG_SEED 1701
+# 	./pts/person.torso/VGG16/kinect2.torso.21/train.sh 0 VGG16 --set RNG_SEED 1701
 
 set -x
 set -e
