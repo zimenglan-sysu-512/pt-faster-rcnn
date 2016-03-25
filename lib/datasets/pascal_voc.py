@@ -71,7 +71,8 @@ class pascal_voc(datasets.imdb):
     print self._class_to_ind
     print
     # D_IS_INPUT
-    self._image_ext = image_ext
+    self._image_ext = cfg.IMAGE_EXT
+    # self._image_ext = image_ext
     self._input_img_debug_str = ""
     self._D_INPUT_DIR = D_INPUT_DIR
     self._D_INPUT_FILE = D_INPUT_FILE

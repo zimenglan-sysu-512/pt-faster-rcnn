@@ -2,6 +2,7 @@ MODEL_NAME: pts
 EXP_DIR: person.torso/VGG16/kinect2.torso.21
 IS_EXP_DIR: True
 USE_GPU_NMS: True
+IMAGE_EXT: .png
 TASK_NAME: person.torso
 FAST_RCNN_TYPE: kinect2.torso.21
 MAX_ITERS: "223780,111890,223780,111890"
