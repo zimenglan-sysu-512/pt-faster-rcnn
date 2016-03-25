@@ -1,6 +1,6 @@
 #!/bin/sh
 
-root="~/dongdk/pt-fast-rcnn"
+root="/home/d302/dongdk/pt-fast-rcnn"
 cd $root
 
 log_file=logs/person.torso_VGG16_kinect2.torso.21_demo_Kinect2.log
@@ -10,11 +10,11 @@ is_video=0
 
 t_cls="person"
 
-im_path="~/dongdk/dataset/Kinect2/up.crop.color/"
+im_path="/home/d302/dongdk/dataset/Kinect2/up.crop.color/"
 
 # out_file="person.bbox.txt"	# write the detected results (bboxes) into file if given
 
-out_dire="~/dongdk/dataset/Kinect2/vision/torso/"
+out_dire="/home/d302/dongdk/dataset/Kinect2/vision/torso/"
 mkdir -p $out_dire
 
 def="${root}/pts/person.torso/VGG16/kinect2.torso.21/faster_rcnn_test.pt"
@@ -23,7 +23,7 @@ cls_filepath="${root}/pts/person.torso/pascal_voc_classes_names.filepath"
 
 cfg_file="${root}/pts/person.torso/VGG16/kinect2.torso.21/test.yml"
 
-caffemodel="~/dongdk/pt-fast-rcnn/output/person.torso/VGG16/kinect2.torso.21/VGG16_faster_rcnn_final.caffemodel"
+caffemodel="/home/d302/dongdk/pt-fast-rcnn/output/person.torso/VGG16/kinect2.torso.21/VGG16_faster_rcnn_final.caffemodel"
 
 # execute
 $root/tools/person_torso_demo.py \
