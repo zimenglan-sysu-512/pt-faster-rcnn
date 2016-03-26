@@ -20,7 +20,7 @@ TRAIN:
   CACHE: "person.torso/vgg16/flic.torso.21.cache"
   ## input
   D_INPUT_LAB_DIR: labels/
-  D_INPUT_IMG_DIR: crop.images2/
+  D_INPUT_IMG_DIR: crop.images2/train/
   D_INPUT_FILE: crop_train_torso_labels2.txt
   D_INPUT_DIR: /home/ddk/dongdk/dataset/FLIC/
 TEST:
