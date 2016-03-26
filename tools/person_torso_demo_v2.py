@@ -136,7 +136,8 @@ def _init_parse():
   _create_dire(out_dire)
 
   cls_filepath = args.cls_filepath.strip()
-  if not os.path.exists(cls_filepath) or not os.path.isfile(cls_filepath):
+  if not os.path.exists(cls_filepath) or \
+     not os.path.isfile(cls_filepath):
     raise IOError(('{:s} not found.\n').format(cls_filepath))
   with open(cls_filepath) as f:
     classes = [x.strip().lower() for x in f.readlines()]
@@ -163,11 +164,13 @@ def _init_parse():
   # #################################
   # person
   p_prototxt = args.p_prototxt.strip()
-  if not os.path.exists(p_prototxt) or not os.path.isfile(p_prototxt):
+  if not os.path.exists(p_prototxt) or \
+     not os.path.isfile(p_prototxt):
     raise IOError(('{:s} not found.\n').format(p_prototxt))
 
   p_caffemodel = args.p_caffemodel.strip()
-  if not os.path.exists(p_caffemodel) or not os.path.isfile(p_caffemodel):
+  if not os.path.exists(p_caffemodel) or \
+     not os.path.isfile(p_caffemodel):
     raise IOError(('{:s} not found.\n').format(p_caffemodel))
 
   p_net = caffe.Net(p_prototxt, p_caffemodel, caffe.TEST)
@@ -177,11 +180,13 @@ def _init_parse():
   # #################################
   # torso
   t_prototxt = args.t_prototxt.strip()
-  if not os.path.exists(t_prototxt) or not os.path.isfile(t_prototxt):
+  if not os.path.exists(t_prototxt) or \
+     not os.path.isfile(t_prototxt):
     raise IOError(('{:s} not found.\n').format(t_prototxt))
 
   t_caffemodel = args.t_caffemodel.strip()
-  if not os.path.exists(t_caffemodel) or not os.path.isfile(t_caffemodel):
+  if not os.path.exists(t_caffemodel) or \
+     not os.path.isfile(t_caffemodel):
     raise IOError(('{:s} not found.\n').format(t_caffemodel))
 
   t_net = caffe.Net(t_prototxt, t_caffemodel, caffe.TEST)

@@ -134,7 +134,8 @@ def _init_parse():
   _create_dire(out_dire)
 
   cls_filepath = args.cls_filepath.strip()
-  if not os.path.exists(cls_filepath) or not os.path.isfile(cls_filepath):
+  if not os.path.exists(cls_filepath) or \
+     not os.path.isfile(cls_filepath):
     raise IOError(('{:s} not found.\n').format(cls_filepath))
   with open(cls_filepath) as f:
     classes = [x.strip().lower() for x in f.readlines()]
@@ -149,11 +150,13 @@ def _init_parse():
   print "\nt_cls:", t_cls, "\n"
 
   prototxt = args.prototxt.strip()
-  if not os.path.exists(prototxt) or not os.path.isfile(prototxt):
+  if not os.path.exists(prototxt) or \
+     not os.path.isfile(prototxt):
     raise IOError(('{:s} not found.\n').format(prototxt))
 
   caffemodel = args.caffemodel.strip()
-  if not os.path.exists(caffemodel) or not os.path.isfile(caffemodel):
+  if not os.path.exists(caffemodel) or \
+     not os.path.isfile(caffemodel):
     raise IOError(('{:s} not found.\n').format(caffemodel))
 
   if args.cpu_mode:
