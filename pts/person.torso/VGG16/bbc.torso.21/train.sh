@@ -2,7 +2,7 @@
 # Usage:
 # 	./pts/torso/VGG16/bbc.torso.21/train_torso.sh GPU NET [--set ...]
 # Example:
-# 	RootDir=~/dongdk/pt-fast_rcnn/
+# 	RootDir=/home/ddk/dongdk/pt-fast_rcnn/
 # 	cd $RootDir
 # 	./pts/person.torso/VGG16/bbc.torso.21/train.sh 0 VGG16 --set RNG_SEED 1701
 

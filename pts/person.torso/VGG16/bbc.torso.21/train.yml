@@ -4,7 +4,7 @@ IS_EXP_DIR: True
 USE_GPU_NMS: True
 TASK_NAME: person.torso
 FAST_RCNN_TYPE: bbc.torso.21
-MAX_ITERS: "540000,280000,540000,280000"
+MAX_ITERS: "850000,430000,850000,430000"
 STAGE1_RPN_SOLVER60K80K: stage1_rpn_solver60k80k.pt
 STAGE1_FAST_RCNN_SOLVER30K40K: stage1_fast_rcnn_solver30k40k.pt
 STAGE2_RPN_SOLVER60K80K: stage2_rpn_solver60k80k.pt
@@ -22,6 +22,6 @@ TRAIN:
   D_INPUT_LAB_DIR: labels/
   D_INPUT_IMG_DIR: crop.data/
   D_INPUT_FILE: crop_train_torso_21w.label
-  D_INPUT_DIR: ~/dongdk/dataset/bbc_pose/
+  D_INPUT_DIR: /home/ddk/dongdk/dataset/bbc_pose/
 TEST:
   HAS_RPN: True

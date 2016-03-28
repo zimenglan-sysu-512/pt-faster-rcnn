@@ -1,4 +1,4 @@
-ROOT_DIR=~/dongdk/pt-fast-rcnn
+ROOT_DIR=/home/ddk/dongdk/pt-fast-rcnn
 
 run train
 	cd $ROOT_DIR

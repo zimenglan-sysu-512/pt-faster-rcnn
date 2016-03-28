@@ -1,6 +1,6 @@
 #!/bin/sh
 
-root="~/dongdk/pt-fast-rcnn"
+root="/home/ddk/dongdk/pt-fast-rcnn"
 cd $root
 
 log_file=logs/person.torso_VGG16_bbc.torso.21_demo_bbc_pose.log
@@ -10,11 +10,12 @@ is_video=0
 
 t_cls="person"
 
-im_path="~/dongdk/dataset/bbc_pose/crop.data/16/"
+im_path="/home/ddk/dongdk/dataset/bbc_pose/crop.data/16/"
 
-# out_file="person.bbox.txt"	# write the detected results (bboxes) into file if given
+# write the detected results (bboxes) into file if given
+out_file="/home/ddk/dongdk/dataset/bbc_pose/torso_masks/torso_results.txt"
 
-out_dire="~/dongdk/dataset/bbc_pose/vision/torso/crop.data/16/"
+out_dire="/home/ddk/dongdk/dataset/bbc_pose/vision/torso/"
 mkdir -p $out_dire
 
 def="${root}/pts/person.torso/VGG16/bbc.torso.21/faster_rcnn_test.pt"
@@ -23,7 +24,7 @@ cls_filepath="${root}/pts/person.torso/pascal_voc_classes_names.filepath"
 
 cfg_file="${root}/pts/person.torso/VGG16/bbc.torso.21/test.yml"
 
-caffemodel="~/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21/VGG16_faster_rcnn_final.caffemodel"
+caffemodel="${root}/output/person.torso/VGG16/bbc.torso.21/VGG16_faster_rcnn_final.caffemodel"
 
 # execute
 $root/tools/person_torso_demo.py \
@@ -31,6 +32,7 @@ $root/tools/person_torso_demo.py \
 		--t_cls $t_cls \
 		--im_path $im_path \
 		--is_video $is_video \
+		--out_file $out_file \
 		--cfg_file $cfg_file \
 		--out_dire  $out_dire \
 		--caffemodel $caffemodel \
