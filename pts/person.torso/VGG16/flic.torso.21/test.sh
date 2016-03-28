@@ -10,12 +10,12 @@ is_video=0
 
 t_cls="person"
 
-im_path="/home/ddk/dongdk/dataset/FLIC/crop.images2/test/"
+im_path="/home/ddk/dongdk/dataset/FLIC/crop.images2/train/"
 
 # write the detected results (bboxes) into file if given
-out_file="flic_torso.txt"	
+out_file="/home/ddk/dongdk/dataset/FLIC/vision/train.torso/flic_torso_train.txt"	
 
-out_dire="/home/ddk/dongdk/dataset/FLIC/vision/test.torso/test/"
+out_dire="/home/ddk/dongdk/dataset/FLIC/vision/train.torso/train/"
 mkdir -p $out_dire
 
 def="${root}/pts/person.torso/VGG16/flic.torso.21/faster_rcnn_test.pt"
@@ -33,6 +33,7 @@ $root/tools/person_torso_demo.py \
 		--im_path $im_path \
 		--is_video $is_video \
 		--cfg_file $cfg_file \
+		--out_file $out_file \
 		--out_dire  $out_dire \
 		--caffemodel $caffemodel \
 		--cls_filepath $cls_filepath \

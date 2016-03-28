@@ -29,7 +29,6 @@ import matplotlib.pyplot as plt
 
 per_tor_dxy = 10
 
-# origin as faster-rcnn using plt for showing image
 def _demo4image(net, im_path, classes, t_cls, out_dire=None, NMS_THRESH = 0.3, CONF_THRESH = 0.8):
   """Detect object classes in an image using pre-computed object proposals."""
   timer = Timer()
@@ -54,7 +53,6 @@ def _demo4image(net, im_path, classes, t_cls, out_dire=None, NMS_THRESH = 0.3, C
   total_time = timer.toc(average=False)
   print "Detection took %ss for %s object proposals" % (total_time, boxes.shape[0])
 
-# using cv2 for showing image
 def _demo4image_2(net, im_path, classes, t_cls, out_dire=None, NMS_THRESH = 0.3, CONF_THRESH = 0.6, im_ext=".jpg"):
   """Detect object classes in an image using pre-computed object proposals."""
   timer = Timer()
@@ -101,8 +99,7 @@ def _demo4image_2(net, im_path, classes, t_cls, out_dire=None, NMS_THRESH = 0.3,
   total_time = timer.toc(average=False)
   print "Detection took %ss for %s object proposals" % (total_time, boxes.shape[0])
 
-# like _demo4image_2, just show the top 1 (highest score) bbox for each class without nms
-def _demo4image_top1(net, im_path, classes, t_cls, out_dire=None, NMS_THRESH = 0.3, CONF_THRESH = 0.6, im_ext=".jpg"):
+def _demo4image_top1(net, im_path, classes, t_cls, out_dire=None, im_ext=".jpg"):
   """Detect object classes in an image using pre-computed object proposals."""
   timer = Timer()
   timer.tic()
@@ -123,24 +120,12 @@ def _demo4image_top1(net, im_path, classes, t_cls, out_dire=None, NMS_THRESH = 0
     score          = cls_scores[obj_ind]
     bbox           = boxes[obj_ind, 4 * cls_ind: 4 * (cls_ind + 1)]
     bbox           = [int(b) for b in bbox]
-    # 
-    x1, y1, x2, y2 = bbox
-    # x1             = x1 - per_tor_dxy
-    # y1             = y1 - per_tor_dxy
-    # x2             = x2 + per_tor_dxy
-    # y2             = y2 + per_tor_dxy
-    # # modify by hand
-    # x1             = max(x1, 1)
-    # y1             = max(y1, 1)
-    # x2             = min(x2, w - 2)
-    # y2             = min(y2, h - 2)
     bbox           = [x1, y1, x2, y2]
-    # 
-    cls   = classes[cls_ind]
-    p1    = (bbox[0], bbox[1])
-    p2    = (bbox[2], bbox[3])
+    cls            = classes[cls_ind]
+    p1             = (bbox[0], bbox[1])
+    p2             = (bbox[2], bbox[3])
     cv2.rectangle(im, p1, p2, (38, 231, 16), 2)
-    p3    = (bbox[0], bbox[1] - 5)
+    p3             = (bbox[0], bbox[1] - 5)
     cv2.putText(im, '{:s} {:s}'.format(cls, str(score),), p3, \
         cv2.FONT_HERSHEY_SIMPLEX, .56, (123, 19, 208), 1)
       
@@ -155,7 +140,8 @@ def _demo4image_top1(net, im_path, classes, t_cls, out_dire=None, NMS_THRESH = 0
     cv2.destroyAllWindows()
 
   total_time = timer.toc(average=False)
-  print "Detection took %ss for %s object proposals" % (total_time, boxes.shape[0])
+  print "Detection took %ss for %s object proposals" \
+        % (total_time, boxes.shape[0])
 
 # for single category of multi-instances like person or torso, each image each line
 def _demo4image2file(net, im_path, fhd, classes, t_cls, NMS_THRESH = 0.3, CONF_THRESH = 0.8):
@@ -183,7 +169,8 @@ def _demo4image2file(net, im_path, fhd, classes, t_cls, NMS_THRESH = 0.3, CONF_T
     cls_ind   += 1 
     cls_boxes  = boxes[:, 4 * cls_ind: 4 * (cls_ind + 1)]
     cls_scores = scores[:, cls_ind]
-    dets       = np.hstack((cls_boxes, cls_scores[:, np.newaxis])).astype(np.float32)
+    dets       = np.hstack((cls_boxes, 
+                    cls_scores[:, np.newaxis])).astype(np.float32)
     keep       = nms(dets, NMS_THRESH)
     dets       = dets[keep, :]
     inds       = np.where(dets[:, -1] >= CONF_THRESH)[0]
@@ -194,19 +181,7 @@ def _demo4image2file(net, im_path, fhd, classes, t_cls, NMS_THRESH = 0.3, CONF_T
       score          = str(score)
       bbox           = dets[i, :4]
       bbox           = [int(b) for b in bbox]
-      # 
-      x1, y1, x2, y2 = bbox
-      # x1             = x1 - per_tor_dxy
-      # y1             = y1 - per_tor_dxy
-      # x2             = x2 + per_tor_dxy
-      # y2             = y2 + per_tor_dxy
-      # # modify by hand
-      # x1             = max(x1, 1)
-      # y1             = max(y1, 1)
-      # x2             = min(x2, w - 2)
-      # y2             = min(y2, h - 2)
       bbox           = [x1, y1, x2, y2]
-      # 
       bbox           = [str(b) for b in bbox]
       bbox           = " ".join(bbox).strip()
       info           = info  + " " + score + " " + bbox + " " + cls
@@ -216,7 +191,7 @@ def _demo4image2file(net, im_path, fhd, classes, t_cls, NMS_THRESH = 0.3, CONF_T
   print "Detection took %ss for %s object proposals" % (total_time, boxes.shape[0])
 
 # for single category of top 1 instance like person or torso, each image each line
-def _demo4image2file_top1(net, im_path, fhd, classes, t_cls, NMS_THRESH = 0.3, CONF_THRESH = 0.8):
+def _demo4image2file_top1(net, im_path, fhd, classes, t_cls):
   """
   Detect object classes in an image using pre-computed object proposals.
   And write the results of bboxes into file by file handler `fhd`
@@ -245,19 +220,6 @@ def _demo4image2file_top1(net, im_path, fhd, classes, t_cls, NMS_THRESH = 0.3, C
     score          = str(score)
     bbox           = boxes[obj_ind, 4 * cls_ind: 4 * (cls_ind + 1)]
     bbox           = [int(b) for b in bbox]
-    # 
-    x1, y1, x2, y2 = bbox
-    # x1             = x1 - per_tor_dxy
-    # y1             = y1 - per_tor_dxy
-    # x2             = x2 + per_tor_dxy
-    # y2             = y2 + per_tor_dxy
-    # # modify by hand
-    # x1             = max(x1, 1)
-    # y1             = max(y1, 1)
-    # x2             = min(x2, w - 2)
-    # y2             = min(y2, h - 2)
-    bbox           = [x1, y1, x2, y2]
-    # 
     bbox           = [str(b) for b in bbox]
     bbox           = " ".join(bbox).strip()
     info           = info + " " + score + " " + bbox + " " + cls
@@ -265,7 +227,8 @@ def _demo4image2file_top1(net, im_path, fhd, classes, t_cls, NMS_THRESH = 0.3, C
   fhd.write(info.strip() + "\n")
 
   total_time = timer.toc(average=False)
-  print "Detection took %ss for %s object proposals" % (total_time, boxes.shape[0])
+  print "Detection took %ss for %s object proposals" \
+        % (total_time, boxes.shape[0])
 
 # not save the results (visualization)
 def _demo4video(net, im, classes, t_cls, NMS_THRESH=0.3, CONF_THRESH=0.8):
@@ -359,19 +322,17 @@ def pose4video(net, classes, t_cls):
 
 def pose4images(net, classes, im_path, t_cls, out_dire, out_file):
   '''process each image: person & torso detection'''
-  assert os.path.isdir(out_dire) == True, "please be sure `out_dire`: %s" % (out_dire,)
+  assert os.path.isdir(out_dire) == True, \
+      "please be sure `out_dire`: %s" % (out_dire,)
   
   im_paths, im_n = _im_paths(im_path) # input images (test)
 
   timer = Timer()
   timer.tic()
 
-  # write the results into file, if `out_file` is given
-  if out_file and len(out_file) > 0:
-    out_path = out_dire + out_file
-    fhd      = open(out_path, "w")
-
-    print "\nwrite the results into `%s`\n\n" % (out_path,)
+  if out_file is not None:
+    fhd      = open(out_file, "w")
+    print "\nwrite the results into `%s`\n\n" % (out_file,)
     time.sleep(2)
 
     for im_c in xrange(im_n):
@@ -380,7 +341,43 @@ def pose4images(net, classes, im_path, t_cls, out_dire, out_file):
       _demo4image2file(net, im_path, fhd, classes, t_cls)
 
     fhd.close()
-  else: # only show the highest-score bbox of each category
+  else: 
+    print "\nshow the results using images"
+    time.sleep(2)
+
+    for im_c in xrange(im_n):
+      print "\n\nim_c: %s (%s)" % (im_c, im_n)
+      im_path = im_paths[im_c]
+      _demo4image(net, im_path, classes, t_cls, out_dire)
+
+  timer.toc()
+  total_time = timer.total_time
+  aver_time  = total_time / (im_n + 0.)
+  print "Detection took %ss for %s images (average time: %s)" \
+        % (total_time, im_n, aver_time)
+
+def pose4images_top1(net, classes, im_path, t_cls, out_dire, out_file):
+  '''process each image: person & torso detection'''
+  assert os.path.isdir(out_dire) == True, \
+      "please be sure `out_dire`: %s" % (out_dire,)
+  
+  im_paths, im_n = _im_paths(im_path) # input images (test)
+
+  timer = Timer()
+  timer.tic()
+
+  if out_file is not None:
+    fhd      = open(out_file, "w")
+    print "\nwrite the results into `%s`\n\n" % (out_file,)
+    time.sleep(2)
+
+    for im_c in xrange(im_n):
+      print "\n\nim_c: %s (%s)" % (im_c, im_n)
+      im_path = im_paths[im_c]
+      _demo4image2file_top1(net, im_path, fhd, classes, t_cls)
+
+    fhd.close()
+  else: 
     print "\nshow the results using images"
     time.sleep(2)
 
@@ -392,4 +389,5 @@ def pose4images(net, classes, im_path, t_cls, out_dire, out_file):
   timer.toc()
   total_time = timer.total_time
   aver_time  = total_time / (im_n + 0.)
-  print "Detection took %ss for %s images (average time: %s)" % (total_time, im_n, aver_time)
+  print "Detection took %ss for %s images (average time: %s)" \
+        % (total_time, im_n, aver_time)

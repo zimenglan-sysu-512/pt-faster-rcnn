@@ -14,7 +14,8 @@ from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list
 from fast_rcnn.test_ori import im_detect
 from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
-from per_tor_util.person_torso_func import pose4video, pose4images
+from per_tor_util.person_torso_func import pose4video, \
+                              pose4images, pose4images_top1
 
 import cv2
 import time
@@ -68,13 +69,15 @@ def _get_test_data(in_file, l_obj_n=6):
 def _parse_args():
   """Parse input arguments."""
   parser = argparse.ArgumentParser(description='Faster R-CNN demo')
-  parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
+  parser.add_argument('--gpu', dest='gpu_id', 
+                      help='GPU device id to use [0]',
                       default=0, type=int)
   parser.add_argument('--cpu', dest='cpu_mode',
                       help='Use CPU mode (overrides --gpu)',
                       action='store_true')
   parser.add_argument('--cfg_file', dest='cfg_file',
-                      help='optional config file', default=None, type=str)
+                      help='optional config file', 
+                      default=None, type=str)
   parser.add_argument('--def', dest='prototxt',
                       help='prototxt file defining the network',
                       default=None, type=str)
@@ -105,7 +108,7 @@ def _parse_args():
   # out file (torso | person)
   parser.add_argument('--out_file', dest='out_file',
                       help='Restore the results of torso | person detection',
-                      default="", type=str)
+                      default=None, type=str)
   if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
@@ -199,6 +202,6 @@ if __name__ == '__main__':
   else:
     print "\n\nDection of Person | Torso in images"
     time.sleep(2)
-    pose4images(net, classes, im_path, t_cls, out_dire, out_file)
+    pose4images_top1(net, classes, im_path, t_cls, out_dire, out_file)
   
   print "\n\nDetection has been done.\n\n"

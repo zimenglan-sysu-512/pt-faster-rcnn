@@ -497,8 +497,7 @@ def pose4images(p_net, t_net, classes, im_path, t_cls, out_dire, out_file, im_ex
   timer = Timer() # set timer
   timer.tic()     
 
-  # write the results into file, if `out_file` is given
-  if out_file and len(out_file) > 0:
+  if out_file is not None:
     out_path = out_dire + out_file
     fhd      = open(out_path, "w")
     print "\nwrite the results into `%s`\n\n" % (out_path,)
@@ -509,7 +508,7 @@ def pose4images(p_net, t_net, classes, im_path, t_cls, out_dire, out_file, im_ex
       _bbox4image2file_v2(p_net, t_net, im_path, classes, t_cls, fhd)
 
     fhd.close()
-  else: # only show the highest-score bbox of each category
+  else: 
     print "\nshow the results using images"
     for im_c in xrange(im_n):
       timer2 = Timer()
@@ -525,4 +524,5 @@ def pose4images(p_net, t_net, classes, im_path, t_cls, out_dire, out_file, im_ex
   timer.toc()
   total_time = timer.total_time
   aver_time  = total_time / (im_n + 0.)
-  print "Detection took %ss for %s images (average time: %s)" % (total_time, im_n, aver_time)
+  print "Detection took %ss for %s images (average time: %s)" \
+        % (total_time, im_n, aver_time)
