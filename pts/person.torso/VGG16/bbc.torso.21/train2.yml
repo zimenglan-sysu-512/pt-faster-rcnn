@@ -24,7 +24,7 @@ TRAIN:
   D_INPUT_FILE: crop_train_torso_21w.label
   D_INPUT_DIR: /home/surge/dongdk/dataset/bbc_pose/
   ## reload
-  STAGE1_RPN_IS_TRAIN: true
+  STAGE1_RPN_IS_TRAIN: False
   STAGE1_RPN_MODEL_PATH: /home/surge/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21/vgg16_rpn_stage1_iter_810000.caffemodel
 TEST:
   HAS_RPN: True
