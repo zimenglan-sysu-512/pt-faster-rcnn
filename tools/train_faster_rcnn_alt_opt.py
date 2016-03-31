@@ -289,8 +289,15 @@ def rpn_generate(queue=None, imdb_name=None, rpn_model_path=None, cfg=None, \
   output_dir = get_output_dir(imdb, None)
   print 'Output will be saved to `{:s}`'.format(output_dir)
   
+  print "\n\n"
   # Network -> Load RPN & Configurations
+  print "rpn generate -> load trained model from:"
+  print "  pt:", rpn_test_prototxt
+  print "  model:", rpn_model_path
+  print "\n\n"
+  sleep(3)
   rpn_net = caffe.Net(rpn_test_prototxt, rpn_model_path, caffe.TEST)
+  sleep(3)
 
   # Get proposals from rpn network and write them into files
   if rpn_cache_path is not None and len(rpn_cache_path) > 0:
