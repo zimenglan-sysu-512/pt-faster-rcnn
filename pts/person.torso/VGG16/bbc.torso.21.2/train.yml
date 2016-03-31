@@ -1,0 +1,27 @@
+MODEL_NAME: pts
+EXP_DIR: person.torso/VGG16/bbc.torso.21.2
+IS_EXP_DIR: True
+USE_GPU_NMS: True
+TASK_NAME: person.torso
+FAST_RCNN_TYPE: bbc.torso.21.2
+MAX_ITERS: "228794,127108,228794,127108"
+STAGE1_RPN_SOLVER60K80K: stage1_rpn_solver60k80k.pt
+STAGE1_FAST_RCNN_SOLVER30K40K: stage1_fast_rcnn_solver30k40k.pt
+STAGE2_RPN_SOLVER60K80K: stage2_rpn_solver60k80k.pt
+STAGE2_FAST_RCNN_SOLVER30K40K: stage2_fast_rcnn_solver30k40k.pt
+TRAIN:
+  HAS_RPN: True
+  MAX_SIZE: 600
+  SCALES: !!python/tuple [360, ]
+  RPN_IMS_PER_BATCH: 1
+  FAST_RCNN_IMS_PER_BATCH: 2
+  ## cache
+  DATA: "caches"
+  CACHE: "person.torso/vgg16/bbc.torso.21.2.cache"
+  ## input
+  D_INPUT_LAB_DIR: labels/
+  D_INPUT_IMG_DIR: crop.data/
+  D_INPUT_FILE: crop_train_torso_21w_step4.label
+  D_INPUT_DIR: /home/ddk/dongdk/dataset/bbc_pose/
+TEST:
+  HAS_RPN: True
