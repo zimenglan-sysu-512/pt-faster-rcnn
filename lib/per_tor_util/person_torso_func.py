@@ -277,6 +277,25 @@ def _demo4video(net, im, classes, t_cls, NMS_THRESH=0.3, CONF_THRESH=0.8):
   total_time = timer.toc(average=False)
   print "Detection took %ss for %s object proposals" % (total_time, boxes.shape[0])
 
+def _im_paths_from_dire(in_dire):
+  im_paths = []
+  dires    = os.listdir(in_dire)
+  for dire in dires:
+    im_path = in_dire + dire
+    if not im_path.endswith("/") and not im_path.endswith(".jpg") and \
+       not im_path.endswith(".jpeg") and not im_path.endswith(".png"):
+      im_path = im_path + "/"
+    if os.path.isdir(im_path):
+      im_paths2 = _im_paths(im_path)
+      if len(im_paths2) > 0:
+        im_paths.extend(im_paths2)
+    else:
+      # print im_path
+      if os.path.exists(im_path) and os.path.isfile(im_path):
+        im_paths.append(im_path)
+
+  return im_paths
+
 def _im_paths(im_path):
   im_path = im_path.strip()
   if os.path.isfile(im_path):
@@ -286,10 +305,13 @@ def _im_paths(im_path):
     else: # read from label file: contain im_path [label ...]
       im_paths, _ = _get_test_data(im_path)
   elif os.path.isdir(im_path):  # read from image directory
-    im_names = os.listdir(im_path)
-    assert len(im_names) >= 1
-    im_names.sort() # sort it for some convinience
-    im_paths = [im_path + im_name.strip() for im_name in im_names]
+    # im_names = os.listdir(im_path)
+    # assert len(im_names) >= 1
+    # im_names.sort() # sort it for some convinience
+    # im_paths = [im_path + im_name.strip() for im_name in im_names]
+    im_paths = _im_paths_from_dire(im_path)
+    assert len(im_paths) >= 1
+    im_paths.sort()
   else:
     raise IOError(('{:s} not exist').format(im_path))
 
