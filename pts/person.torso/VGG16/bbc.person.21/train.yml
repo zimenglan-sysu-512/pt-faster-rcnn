@@ -20,8 +20,8 @@ TRAIN:
   CACHE: "person.torso/vgg16/bbc.person.21.cache"
   ## input
   D_INPUT_LAB_DIR: labels/
-  D_INPUT_IMG_DIR: crop.data/
-  D_INPUT_FILE: crop_train_torso_21w_step4.label
+  D_INPUT_IMG_DIR: data/
+  D_INPUT_FILE: pbbox_train_plus_21w_step4.label
   D_INPUT_DIR: /home/wenxi/dongdk/dataset/bbc_pose/
 TEST:
   HAS_RPN: True
