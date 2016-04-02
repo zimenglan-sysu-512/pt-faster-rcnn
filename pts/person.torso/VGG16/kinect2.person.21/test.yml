@@ -1,0 +1,5 @@
+EXP_DIR: person.torso/VGG16/kinect2.person.21
+USE_GPU_NMS: True
+TEST:
+  HAS_RPN: True
+  SCALES: !!python/tuple [600, ]
