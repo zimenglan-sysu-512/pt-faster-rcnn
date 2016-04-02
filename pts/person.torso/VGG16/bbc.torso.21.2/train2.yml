@@ -4,7 +4,7 @@ IS_EXP_DIR: True
 USE_GPU_NMS: True
 TASK_NAME: person.torso
 FAST_RCNN_TYPE: bbc.torso.21.2
-MAX_ITERS: "850000,430000,850000,430000"
+MAX_ITERS: "228794,127108,228794,127108"
 STAGE1_RPN_SOLVER60K80K: stage1_rpn_solver60k80k.pt
 STAGE1_FAST_RCNN_SOLVER30K40K: stage1_fast_rcnn_solver30k40k.pt
 STAGE2_RPN_SOLVER60K80K: stage2_rpn_solver60k80k.pt
@@ -24,9 +24,10 @@ TRAIN:
   D_INPUT_FILE: crop_train_torso_21w_step4.label
   D_INPUT_DIR: /home/ddk/dongdk/dataset/bbc_pose/
   ## reload
-  STAGE1_RPN_IS_TRAIN: False
-  STAGE1_FAST_RCNN_IS_GENERATE_RPN: False
-  STAGE1_RPN_MODEL_PATH: /home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel
-  STAGE1_RPN_PROPOSAL_PATH: /home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000.caffemodel/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage1_iter_810000_proposals.pkl
+  STAGE2_RPN_IS_TRAIN: False
+  STAGE2_FAST_RCNN_IS_GENERATE_RPN: False
+  STAGE2_RPN_MODEL_PATH: "/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage2_iter_228794.caffemodel"
+  STAGE2_RPN_PROPOSAL_PATH: "/home/ddk/dongdk/pt-fast-rcnn/output/person.torso/VGG16/bbc.torso.21.2/vgg16_rpn_stage2_iter_228794_proposals.pkl"
+  STAGE2_FAST_RCNN_IS_TRAIN: True
 TEST:
   HAS_RPN: True

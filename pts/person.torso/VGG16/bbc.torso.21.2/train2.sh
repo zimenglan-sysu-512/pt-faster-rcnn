@@ -40,7 +40,7 @@ cfg="${pts}${exper_dir}train2.yml"
 # weights="data/imagenet_models/${NET}.v2.caffemodel"
 weights="data/faster_rcnn_models/${NET}_faster_rcnn_final.caffemodel"
 
-Others=0
+Others=1
 
 # four stages if Others is set `0`
 # 	rpn1 -> fast_rcnn1 -> rpn2 -> fast_rcnn2

@@ -10,7 +10,7 @@ is_video=0
 
 t_cls="person"
 
-im_path="/home/ddk/dongdk/dataset/bbc_pose/crop.data/16/"
+im_path="/home/ddk/dongdk/dataset/bbc_pose/data/16/"
 
 # write the detected results (bboxes) into file if given
 out_file="/home/ddk/dongdk/dataset/bbc_pose/torso_masks/torso_results.txt"

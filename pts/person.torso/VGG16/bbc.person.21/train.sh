@@ -1,6 +1,6 @@
 #!/bin/bash
 # Usage:
-# 	./pts/torso/VGG16/bbc.person.21/train_torso.sh GPU NET [--set ...]
+# 	./pts/torso/VGG16/bbc.person.21/train.sh GPU NET [--set ...]
 # Example:
 # 	RootDir=/home/ddk/dongdk/pt-fast_rcnn/
 # 	cd $RootDir
