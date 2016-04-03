@@ -10,10 +10,10 @@ is_video=0
 
 t_cls="person"
 
-im_path="/home/ddk/dongdk/dataset/bbc_pose/crop.data/"
+im_path="/home/ddk/dongdk/dataset/bbc_pose/labels/crop_train_plus_21w_td.label"
 
 # write the detected results (bboxes) into file if given
-out_file="/home/ddk/dongdk/dataset/bbc_pose/torso_masks/torso_results.txt"
+out_file="/home/ddk/dongdk/dataset/bbc_pose/torso_masks/train_21w_torso_results.txt"
 
 out_dire="/home/ddk/dongdk/dataset/bbc_pose/vision/torso/"
 mkdir -p $out_dire

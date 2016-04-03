@@ -156,6 +156,21 @@ def _im_paths_from_dire(in_dire):
 
   return im_paths
 
+def _get_test_data(in_file):
+  fh = open(in_file)
+  im_paths = []
+  for line in fh.readlines():
+    line = line.strip()
+    info = line.split()
+
+    assert len(info) >= 1
+    im_path = info[0].strip()
+    im_paths.append(im_path)
+  fh.close()
+  n_im = len(im_paths)
+  assert n_im >= 1
+  return im_paths, n_im
+
 def _im_paths(im_path):
   im_path = im_path.strip()
   if os.path.isfile(im_path):
@@ -175,10 +190,11 @@ def _im_paths(im_path):
   else:
     raise IOError(('{:s} not exist').format(im_path))
 
-  im_n = len(im_paths)
-  assert im_n >= 1, "invalid input of `im_path`: " % (im_path,)
+  n_im = len(im_paths)
+  assert n_im >= 1, "invalid input of `im_path`: " % (im_path,)
+  print "\n\nn_im:", n_im, "\n\n"
 
-  return im_paths, im_n
+  return im_paths, n_im
 
 # ####################################################################################
 # 
