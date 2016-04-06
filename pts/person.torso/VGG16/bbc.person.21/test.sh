@@ -10,12 +10,12 @@ is_video=0
 
 t_cls="person"
 
-im_path="/home/ddk/dongdk/dataset/bbc_pose/data/16/"
+im_path="/home/ddk/dongdk/dataset/bbc_pose/labels/pbbox_test_pd.txt"
 
 # write the detected results (bboxes) into file if given
-out_file="/home/ddk/dongdk/dataset/bbc_pose/torso_masks/torso_results.txt"
+out_file="/home/ddk/dongdk/dataset/bbc_pose/test_person_results.txt"
 
-out_dire="/home/ddk/dongdk/dataset/bbc_pose/vision/torso/"
+out_dire="/home/ddk/dongdk/dataset/bbc_pose/vision/person/"
 mkdir -p $out_dire
 
 def="${root}/pts/person.torso/VGG16/bbc.person.21/faster_rcnn_test.pt"

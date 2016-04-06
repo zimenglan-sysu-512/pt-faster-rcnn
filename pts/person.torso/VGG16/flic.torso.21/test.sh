@@ -10,12 +10,12 @@ is_video=0
 
 t_cls="person"
 
-im_path="/home/ddk/dongdk/dataset/FLIC/crop.images2/train/"
+im_path="/home/ddk/dongdk/dataset/FLIC/crop.images2/test/"
 
 # write the detected results (bboxes) into file if given
-out_file="/home/ddk/dongdk/dataset/FLIC/vision/train.torso/flic_torso_train.txt"	
+out_file="/home/ddk/dongdk/dataset/FLIC/vision/flic_torso_test.txt"	
 
-out_dire="/home/ddk/dongdk/dataset/FLIC/vision/train.torso/train/"
+out_dire="/home/ddk/dongdk/dataset/FLIC/vision/test_torso/"
 mkdir -p $out_dire
 
 def="${root}/pts/person.torso/VGG16/flic.torso.21/faster_rcnn_test.pt"

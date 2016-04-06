@@ -10,12 +10,12 @@ is_video=0
 
 t_cls="person"
 
-im_path="/home/ddk/dongdk/dataset/Kinect2/up.crop.color/"
+im_path="/home/ddk/dongdk/dataset/Kinect2/labels/up.color2.pbbox.test_pd.logs"
 
 # write the detected results (bboxes) into file if given
-out_file="/home/ddk/dongdk/dataset/Kinect2/vision/torso/torso_results.txt"	
+out_file="/home/ddk/dongdk/dataset/Kinect2/test_person_results.txt"	
 
-out_dire="/home/ddk/dongdk/dataset/Kinect2/vision/torso/"
+out_dire="/home/ddk/dongdk/dataset/Kinect2/vision/person/"
 mkdir -p $out_dire
 
 def="${root}/pts/person.torso/VGG16/kinect2.person.21/faster_rcnn_test.pt"
