@@ -327,13 +327,13 @@ def _bbox4images_show_v2(p_net, t_net, im_path, classes, t_cls, out_dire, thresh
   p2 = (p_x2, p_y2)
   cv2.rectangle(im, p1, p2, (38, 231, 16), 2)
   p3 = (p_x1, p_y1 - 5)
-  cv2.putText(im, '{:s} {:.3f}'.format(p_cls, p_score), p3, cv2.FONT_HERSHEY_SIMPLEX, .36, (23, 119, 188))
+  # cv2.putText(im, '{:s} {:.3f}'.format(p_cls, p_score), p3, cv2.FONT_HERSHEY_SIMPLEX, .36, (23, 119, 188))
   # draw torso
   p1 = (t_x1, t_y1)
   p2 = (t_x2, t_y2)
-  cv2.rectangle(im, p1, p2, (38, 231, 16), 2)
+  cv2.rectangle(im, p1, p2, (138, 31, 116), 2)
   p3 = (t_x1, t_y1 - 5)
-  cv2.putText(im, '{:s} {:.3f}'.format(t_cls, t_score), p3, cv2.FONT_HERSHEY_SIMPLEX, .36, (23, 119, 188))
+  # cv2.putText(im, '{:s} {:.3f}'.format(t_cls, t_score), p3, cv2.FONT_HERSHEY_SIMPLEX, .36, (23, 119, 188))
 
   # cv2.imshow(im_name, im)
   # cv2.waitKey(0)
@@ -512,7 +512,7 @@ def pose4video(p_net, t_net, classes, t_cls):
           t_y2 += p_y1
           p1    = (t_x1, t_y1)
           p2    = (t_x2, t_y2)
-          cv2.rectangle(im, p1, p2, (138, 31, 166), 2)
+          cv2.rectangle(im, p1, p2, (138, 31, 116), 2)
           p3    = (t_x1, t_y1 - 5)
           cv2.putText(im, '{:s} {:.3f}'.format(t_cls, t_score), p3, cv2.FONT_HERSHEY_SIMPLEX, .36, (23, 119, 188))
       cv2.imshow("frame", im) # show for all categories

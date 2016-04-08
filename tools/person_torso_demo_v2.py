@@ -107,7 +107,7 @@ def _parse_args():
   # out file (torso | person)
   parser.add_argument('--out_file', dest='out_file',
                       help='Restore the results of torso | person detection',
-                      default="", type=str)
+                      default=None, type=str)
   if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
@@ -131,7 +131,9 @@ def _init_parse():
   # Get input and output images directories
   im_ext   = args.im_ext.strip()
   im_path  = args.im_path.strip()
-  out_file = args.out_file.strip()
+  out_file = args.out_file
+  if out_file is not None:
+    out_file = out_file.strip()
   out_dire = args.out_dire.strip()
   _create_dire(out_dire)
 
