@@ -19,7 +19,7 @@ def disp_pkl(in_file):
 
 if __name__ == '__main__':
 	''''''	
-	in_dir = "/home/ddk/fashion-items/dataset/FashionItems/labels/"
+	in_dir = "/pathTo/"
 	file   = "demo.pkl"
 	path   = in_dir + file
 	prop   = disp_pkl(path)

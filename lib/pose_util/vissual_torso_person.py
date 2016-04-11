@@ -99,9 +99,9 @@ def im_show(in_dire, out_dire, in_file):
 
 if __name__ == '__main__':
 	''''''
-	in_dire  = "/home/ddk/malong/pt.model/person.torso.dataset.ldp/face/images/"
-	out_dire = "/home/ddk/malong/pt.model/person.torso.dataset.ldp/face/vision/V1/"
-	in_file  = "/home/ddk/malong/pt.model/person.torso.dataset.ldp/face/labels/face.train.log"
+	in_dire  = "/pathTo/person.torso.dataset.ldp/face/images/"
+	out_dire = "/pathTo/person.torso.dataset.ldp/face/vision/V1/"
+	in_file  = "/pathTo/person.torso.dataset.ldp/face/labels/face.train.log"
 
 	mkdirs(out_dire)
 	im_show(in_dire, out_dire, in_file)

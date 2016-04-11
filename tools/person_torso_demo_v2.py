@@ -100,6 +100,9 @@ def _parse_args():
   parser.add_argument('--cls_filepath', dest='cls_filepath',
                       help='the path to the classes\' file',
                       default="", type=str)
+  parser.add_argument('--choice', dest='choice',
+                      help='choice to select different func.',
+                      default=0, type=int)
   # is_video: 1-video, 0-images
   parser.add_argument('--is_video', dest='is_video',
                       help='images or video captured by camera.. (default for images)',
@@ -211,6 +214,8 @@ if __name__ == '__main__':
   # #####################################################
   # begin
   # #####################################################
+  choice = args.choice
+
   if args.is_video != 0:
     print "\n\nDection of Person | Torso in Video"
     time.sleep(2)
@@ -218,6 +223,7 @@ if __name__ == '__main__':
   else:
     print "\n\nDection of Person | Torso in images"
     time.sleep(2)
-    pose4images(p_net, t_net, classes, im_path, t_cls, out_dire, out_file)
+    pose4images(p_net, t_net, classes, im_path, t_cls, \
+                out_dire, out_file, choice=choice)
   
   print "\n\nDetection has been done.\n\n"

@@ -342,6 +342,71 @@ def _bbox4images_show_v2(p_net, t_net, im_path, classes, t_cls, out_dire, thresh
   out_path = out_dire + im_name + im_ext
   cv2.imwrite(out_path, im)
 
+def _bbox4images_show_v3(p_net, t_net, im_path, classes, t_cls, out_dire, threshold=0., im_ext=".jpg"):
+  '''
+  only highest-score person bbox with corresponding highest-score torso bbox
+    (it's easy to deal with multi-people cases)
+  person detector and torso detector share the same category in the classes file path
+  '''
+  print 'Demo for {}'.format(im_path)
+  im = cv2.imread(im_path)
+  # person detection -- only highest-score bbox
+  assert len(t_cls) == 1
+  p_bboxes = _image2bbox_top1(p_net, im, classes, t_cls)
+  # since several categories, need to find bboxes of the target cls
+  p_bbox   = p_bboxes[0]
+  p_bbox, p_score, p_cls = p_bbox
+  p_x1, p_y1, p_x2, p_y2 = p_bbox
+
+  if p_score < threshold:
+    print "below threshold so that have no results: (%s, %s)" % (p_score, threshold)
+    return
+
+  im_name = im_path.rsplit("/", 1)[1]
+  im_name = im_name.rsplit(".", 1)[0]
+
+  # #######################################################
+  # using cropped image detected by person detector)
+  # torso detection
+  h, w, _  = im.shape
+  x1       = p_x1 - per_tor_dxy
+  y1       = p_y1 - per_tor_dxy
+  x2       = p_x2 + per_tor_dxy
+  y2       = p_y2 + per_tor_dxy
+  x1       = max(x1, 1)
+  y1       = max(y1, 1)
+  x2       = min(x2, w - 2)
+  y2       = min(y2, h - 2)
+  im2      = im[y1: y2, x1: x2]
+  t_bboxes = _image2bbox_top1(t_net, im2, classes, t_cls)
+  t_bbox   = t_bboxes[0]
+  t_bbox, t_score, t_cls = t_bbox
+  t_x1, t_y1, t_x2, t_y2 = t_bbox
+  t_x1    += p_x1
+  t_y1    += p_y1
+  t_x2    += p_x1
+  t_y2    += p_y1
+
+  # draw person
+  p1 = (p_x1, p_y1)
+  p2 = (p_x2, p_y2)
+  cv2.rectangle(im, p1, p2, (38, 231, 16), 2)
+  p3 = (p_x1, p_y1 - 5)
+  # cv2.putText(im, '{:s} {:.3f}'.format(p_cls, p_score), p3, cv2.FONT_HERSHEY_SIMPLEX, .36, (23, 119, 188))
+  # draw torso
+  p1 = (t_x1, t_y1)
+  p2 = (t_x2, t_y2)
+  cv2.rectangle(im, p1, p2, (138, 31, 116), 2)
+  p3 = (t_x1, t_y1 - 5)
+  # cv2.putText(im, '{:s} {:.3f}'.format(t_cls, t_score), p3, cv2.FONT_HERSHEY_SIMPLEX, .36, (23, 119, 188))
+
+  # cv2.imshow(im_name, im)
+  # cv2.waitKey(0)
+  # cv2.destroyAllWindows()
+  
+  out_path = out_dire + im_name + im_ext
+  cv2.imwrite(out_path, im)
+
 def _bbox4image2file_v1(net, im_path, classes, t_cls, fhd):
   '''
   only highest-score person bbox with corresponding highest-score torso bbox
@@ -412,6 +477,52 @@ def _bbox4image2file_v2(p_net, t_net, im_path, classes, t_cls, fhd):
   # t_y1    += p_y1
   # t_x2    += p_x1
   # t_y2    += p_y1
+
+  pt_i = 0
+  info = im_path + " " + str(pt_i)
+  info = info    + " " + str(p_x1) + " " + str(p_y1) + " " + str(p_x2) + " " + str(p_y2) \
+                 + " " + str(t_x1) + " " + str(t_y1) + " " + str(t_x2) + " " + str(t_y2)
+  fhd.write(info.strip() + "\n")
+
+def _bbox4image2file_v3(p_net, t_net, im_path, classes, t_cls, fhd):
+  '''
+  only highest-score person bbox with corresponding highest-score torso bbox
+    (it's easy to deal with multi-people cases)
+  person detector and torso detector share the same category in the classes file path
+  format:
+    im_path [[pt_i p_x1 p_y1 p_x2 p_y2 t_x1 t_y1 t_x2 t_y2] ...]
+  '''
+  print 'Demo for {}'.format(im_path)
+  im = cv2.imread(im_path)
+  assert len(t_cls) == 1
+  # person detection -- only highest-score bbox
+  p_bboxes = _image2bbox_top1(p_net, im, classes, t_cls)
+  p_bbox   = p_bboxes[0]
+  p_bbox, _, _           = p_bbox
+  p_x1, p_y1, p_x2, p_y2 = p_bbox
+
+  # #######################################################
+  # using cropped image (because the when training torso detector 
+  # using cropped image detected by person detector)
+  # torso detection
+  h, w, _  = im.shape
+  x1       = p_x1 - per_tor_dxy
+  y1       = p_y1 - per_tor_dxy
+  x2       = p_x2 + per_tor_dxy
+  y2       = p_y2 + per_tor_dxy
+  x1       = max(x1, 1)
+  y1       = max(y1, 1)
+  x2       = min(x2, w - 2)
+  y2       = min(y2, h - 2)
+  im2      = im[y1: y2, x1: x2]
+  t_bboxes = _image2bbox_top1(t_net, im2, classes, t_cls)
+  t_bbox   = t_bboxes[0]
+  t_bbox, _, _           = t_bbox
+  t_x1, t_y1, t_x2, t_y2 = t_bbox
+  t_x1    += p_x1
+  t_y1    += p_y1
+  t_x2    += p_x1
+  t_y2    += p_y1
 
   pt_i = 0
   info = im_path + " " + str(pt_i)
@@ -526,7 +637,7 @@ def pose4video(p_net, t_net, classes, t_cls):
   cap.release()
   cv2.destroyAllWindows()
 
-def pose4images(p_net, t_net, classes, im_path, t_cls, out_dire, out_file, im_ext=".jpg"):
+def pose4images(p_net, t_net, classes, im_path, t_cls, out_dire, out_file, choice=0, im_ext=".jpg"):
   '''process each image: person & torso detection'''
   assert os.path.isdir(out_dire) == True, "please be sure `out_dire`: %s" % (out_dire,)
   
@@ -543,8 +654,12 @@ def pose4images(p_net, t_net, classes, im_path, t_cls, out_dire, out_file, im_ex
     for im_c in xrange(im_n):
       print "\nim_c: %s (%s)" % (im_c, im_n)
       im_path = im_paths[im_c]
-      _bbox4image2file_v2(p_net, t_net, im_path, classes, t_cls, fhd)
-
+      if choice == 0:
+        _bbox4image2file_v2(p_net, t_net, im_path, classes, t_cls, fhd)
+      elif choice == 1:
+        _bbox4image2file_v3(p_net, t_net, im_path, classes, t_cls, fhd)
+      else:
+        raise ValueError("NotImplemented!")
     fhd.close()
   else: 
     print "\nshow the results using images"
@@ -554,7 +669,12 @@ def pose4images(p_net, t_net, classes, im_path, t_cls, out_dire, out_file, im_ex
 
       print "\nim_c: %s (%s)" % (im_c, im_n)
       im_path = im_paths[im_c]
-      _bbox4images_show_v2(p_net, t_net, im_path, classes, t_cls, out_dire)
+      if choice == 0:
+        _bbox4images_show_v2(p_net, t_net, im_path, classes, t_cls, out_dire)
+      elif choice == 1:
+        _bbox4images_show_v3(p_net, t_net, im_path, classes, t_cls, out_dire)
+      else:
+        raise ValueError("NotImplemented!")
       
       total_time = timer2.toc(average=False)
       print "Detection took %ss for one image" % (total_time,)

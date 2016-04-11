@@ -81,12 +81,15 @@ def capture_video_save(out_dire, out_file, is_video=False, fps=18, vid_ext=".avi
 
 if __name__ == '__main__':
   is_video = False
-  out_file = "mude.16.02.20."
-  out_dire = "/home/ddk/malong/dataset/person.torso/demo/"
+  # out_file = "tianshui."
+  # out_dire = "/home/ddk/download/pt.pose/tianshui/"
+  out_file = "huanglili."
+  out_dire = "/home/ddk/download/pt.pose/huanglili/"
   if is_video:
     out_dire = out_dire + "video/"
   else:
     out_dire = out_dire + "images/"
   mkdirs(out_dire)
 
-  capture_video_save(out_dire, out_file, is_video)
+  fps=15
+  capture_video_save(out_dire, out_file, is_video, fps=fps)

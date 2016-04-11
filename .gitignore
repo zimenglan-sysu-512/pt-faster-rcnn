@@ -18,3 +18,5 @@ lib/nms/cpu_nms.c
 lib/nms/gpu_nms.cpp
 *.tar.gz
 *.zip
+ip
+
