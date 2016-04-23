@@ -22,7 +22,9 @@ NOTE: if you run into trouble, try re-downloading the auxiliary files.
 
 ## Run
 
-Running `python examples/web_demo/app.py` will bring up the demo server, accessible at `http://0.0.0.0:5000`.
+Running `python examples/web_demo/app.py` will bring up the demo server, accessible at 
+		`http://0.0.0.0:5000`.
+		
 You can enable debug mode of the web server, or switch to a different port:
 
     % python examples/web_demo/app.py -h

@@ -684,3 +684,74 @@ def pose4images(p_net, t_net, classes, im_path, t_cls, out_dire, out_file, choic
   aver_time  = total_time / (im_n + 0.)
   print "Detection took %ss for %s images (average time: %s)" \
         % (total_time, im_n, aver_time)
+
+
+# ################################
+# 
+# ################################
+
+
+
+def _bbox4images_show_v21(p_net, t_net, im, classes, pt_cls):
+  ''''''
+  assert len(pt_cls) == 1
+  p_bboxes = _image2bbox_top1(p_net, im, classes, pt_cls)
+  p_bbox   = p_bboxes[0]
+  p_bbox, p_score, _  = p_bbox
+
+  t_bboxes = _image2bbox_top1_cond(t_net, im, classes, pt_cls, p_bbox)
+  t_bbox   = t_bboxes[0]
+  t_bbox, t_score, _  = t_bbox
+
+  h, w, _  = im.shape
+  return h, w, p_bbox, p_score, t_bbox, t_score
+
+def _bbox4images_show_v31(p_net, t_net, im, classes, pt_cls):
+  ''''''
+  assert len(pt_cls) == 1
+  p_bboxes = _image2bbox_top1(p_net, im, classes, pt_cls)
+  p_bbox   = p_bboxes[0]
+  p_bbox, p_score, _     = p_bbox
+  p_x1, p_y1, p_x2, p_y2 = p_bbox
+
+  h, w, _  = im.shape
+  # x1       = p_x1 - per_tor_dxy
+  # y1       = p_y1 - per_tor_dxy
+  # x2       = p_x2 + per_tor_dxy
+  # y2       = p_y2 + per_tor_dxy
+  x1       = max(x1, 1)
+  y1       = max(y1, 1)
+  x2       = min(x2, w - 2)
+  y2       = min(y2, h - 2)
+  im2      = im[y1: y2, x1: x2]
+  t_bboxes = _image2bbox_top1(t_net, im2, classes, pt_cls)
+  t_bbox   = t_bboxes[0]
+  t_bbox, t_score, _     = t_bbox
+  t_x1, t_y1, t_x2, t_y2 = t_bbox
+  t_x1    += p_x1
+  t_y1    += p_y1
+  t_x2    += p_x1
+  t_y2    += p_y1
+  t_bbox   = [t_x1, t_y1, t_x2, t_y2]
+
+  return h, w, p_bbox, p_score, t_bbox, t_score
+
+def pose4images_online(p_net, t_net, image, classes, pt_cls, choice=0):
+  '''process each image: person & torso detection'''
+  if isinstance(image, basestring) and os.path.isfile(image) and os.path.exists(image):
+    im = cv2.imread(image)
+  else:
+    im = image.copy();
+
+  # cv2.imshow("Demo", im)
+  # cv2.waitKey(0)
+  # cv2.destroyAllWindows()
+
+  if choice == 0:
+    res = _bbox4images_show_v21(p_net, t_net, im, classes, pt_cls)
+  elif choice == 1:
+    res = _bbox4images_show_v31(p_net, t_net, im, classes, pt_cls)
+  else:
+    raise ValueError("NotImplemented!")
+  
+  return res

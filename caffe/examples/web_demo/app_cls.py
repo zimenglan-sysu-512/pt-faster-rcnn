@@ -15,6 +15,8 @@ import cStringIO as StringIO
 import urllib
 import exifutil
 
+
+import add_path
 import caffe
 
 REPO_DIRNAME = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + '/../..')
@@ -27,7 +29,7 @@ app = flask.Flask(__name__)
 
 @app.route('/')
 def index():
-    return flask.render_template('index.html', has_result=False)
+    return flask.render_template('index_cls.html', has_result=False)
 
 
 @app.route('/classify_url', methods=['GET'])
@@ -43,14 +45,14 @@ def classify_url():
         # not continue.
         logging.info('URL Image open error: %s', err)
         return flask.render_template(
-            'index.html', has_result=True,
+            'index_cls.html', has_result=True,
             result=(False, 'Cannot open image from URL.')
         )
 
     logging.info('Image: %s', imageurl)
     result = app.clf.classify_image(image)
     return flask.render_template(
-        'index.html', has_result=True, result=result, imagesrc=imageurl)
+        'index_cls.html', has_result=True, result=result, imagesrc=imageurl)
 
 
 @app.route('/classify_upload', methods=['POST'])
@@ -68,13 +70,13 @@ def classify_upload():
     except Exception as err:
         logging.info('Uploaded image open error: %s', err)
         return flask.render_template(
-            'index.html', has_result=True,
+            'index_cls.html', has_result=True,
             result=(False, 'Cannot open uploaded image.')
         )
 
     result = app.clf.classify_image(image)
     return flask.render_template(
-        'index.html', has_result=True, result=result,
+        'index_cls.html', has_result=True, result=result,
         imagesrc=embed_image_html(image)
     )
 
@@ -181,7 +183,7 @@ class ImagenetClassifier(object):
                            'image. Maybe try another one?')
 
 
-def start_tornado(app, port=5000):
+def start_tornado(app, port=5001):
     http_server = tornado.httpserver.HTTPServer(
         tornado.wsgi.WSGIContainer(app))
     http_server.listen(port)
