@@ -21,6 +21,7 @@ from per_tor_util.person_torso_func_v2 import init_net, pose4images_online
 import caffe
 
 import cv2
+import skimage.io
 import time
 import pprint
 import os, sys
@@ -82,7 +83,7 @@ def image_url():
   imageurl = flask.request.args.get('imageurl', '')
   try:
     string_buffer = StringIO.StringIO(urllib.urlopen(imageurl).read())
-    image = caffe.io.load_image(string_buffer)
+    image         = caffe.io.load_image(string_buffer)
 
   except Exception as err:
     # For any exception we encounter in reading the image, we will just not continue.
@@ -93,6 +94,11 @@ def image_url():
 
   logging.info('Image: %s', imageurl)
 
+  filename_ = imageurl.rsplit("/", 1)[1]
+  filename  = os.path.join(UPLOAD_FOLDER, filename_)
+  skimage.io.imsave(filename, image)
+
+  image     = cv2.imread(filename)
   pt_res, pt_time     = app_pt.clf.pt_detect(image)
   viz_im              = viz_pt(image, pt_res)
   pose_res, pose_time = app_pt.clf.pose_eval(image, pt_res)
@@ -112,7 +118,9 @@ def image_upload():
     filename  = os.path.join(UPLOAD_FOLDER, filename_)
     imagefile.save(filename)
     logging.info('Saving to %s.', filename)
-    image = exifutil.open_oriented_im(filename)
+    # image     = exifutil.open_oriented_im(filename)
+    image     = cv2.imread(filename)
+
   except Exception as err:
     logging.info('Uploaded image open error: %s', err)
     return flask.render_template(
@@ -126,13 +134,23 @@ def image_upload():
   result = (True, tuple(pt_res), pt_time, tuple(pose_res), pose_time)
 
   return flask.render_template('index_pt.html', has_result=True, \
-                               result=result, imagesrc=embed_image_html(viz_im)
-  )
+                               result=result, imagesrc=embed_image_html(viz_im))
+
+
+def embed_image_html_ori(image, has_resize=False):
+  """Creates an image embedded in HTML base64 format."""
+  image_pil  = Image.fromarray((255 * image).astype('uint8'))
+  if has_resize:
+    image_pil  = image_pil.resize((256, 256))
+  string_buf = StringIO.StringIO()
+  image_pil.save(string_buf, format='png')
+  data       = string_buf.getvalue().encode('base64').replace('\n', '')
+  return 'data:image/png;base64,' + data
 
 
 def embed_image_html(image, has_resize=False):
   """Creates an image embedded in HTML base64 format."""
-  image_pil  = Image.fromarray((255 * image).astype('uint8'))
+  image_pil  = Image.fromarray(image)
   if has_resize:
     image_pil  = image_pil.resize((256, 256))
   string_buf = StringIO.StringIO()
