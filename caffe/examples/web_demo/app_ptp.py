@@ -30,6 +30,7 @@ import numpy as np
 
 ROOT_DIRE     = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + '/../../..')
 UPLOAD_FOLDER = '/home/ddk/download/caffe_demos/'
+VIZ_FOLDER    = UPLOAD_FOLDER + 'app_ptp_viz/'
 
 ALLOWED_IMAGE_EXTENSIONS = set(['png', 'bmp', 'jpg', 'jpe', 'jpeg', 'gif'])
 
@@ -71,6 +72,14 @@ def viz_pt(image, pt_res, draw_text=False):
   return im
 
 
+def pt_res2string(pt_res):
+  h, w, p_bbox, p_score, t_bbox, t_score = pt_res
+  p_bbox = ",".join([str(b) for b in p_bbox])
+  t_bbox = ",".join([str(b) for b in t_bbox])
+  res = (str(h), str(w), p_bbox, str(p_score), t_bbox, str(t_score))
+
+  return res
+
 # Obtain the flask app_pt object
 app_pt = flask.Flask(__name__)
 
@@ -98,9 +107,12 @@ def image_url():
   filename  = os.path.join(UPLOAD_FOLDER, filename_)
   skimage.io.imsave(filename, image)
 
-  image     = cv2.imread(filename)
-  pt_res, pt_time     = app_pt.clf.pt_detect(image)
-  viz_im              = viz_pt(image, pt_res)
+  image           = cv2.imread(filename)
+  pt_res, pt_time = app_pt.clf.pt_detect(image)
+  viz_im          = viz_pt(image, pt_res)
+  viz_filename    = VIZ_FOLDER + filename_
+  cv2.imwrite(viz_filename, viz_im)
+
   pose_res, pose_time = app_pt.clf.pose_eval(image, pt_res)
   result = (True, tuple(pt_res), pt_time, tuple(pose_res), pose_time)
 
@@ -128,8 +140,11 @@ def image_upload():
         result=(False, 'Cannot open uploaded image.')
     )
 
-  pt_res, pt_time     = app_pt.clf.pt_detect(image)
-  viz_im              = viz_pt(image, pt_res)
+  pt_res, pt_time = app_pt.clf.pt_detect(image)
+  viz_im          = viz_pt(image, pt_res)
+  viz_filename    = VIZ_FOLDER + filename_
+  cv2.imwrite(viz_filename, viz_im)
+  
   pose_res, pose_time = app_pt.clf.pose_eval(image, pt_res)
   result = (True, tuple(pt_res), pt_time, tuple(pose_res), pose_time)
 
@@ -150,7 +165,8 @@ def embed_image_html_ori(image, has_resize=False):
 
 def embed_image_html(image, has_resize=False):
   """Creates an image embedded in HTML base64 format."""
-  image_pil  = Image.fromarray(image)
+  image2     = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+  image_pil  = Image.fromarray(image2)
   if has_resize:
     image_pil  = image_pil.resize((256, 256))
   string_buf = StringIO.StringIO()
@@ -328,5 +344,6 @@ def start_from_terminal(app_pt):
 if __name__ == '__main__':
   logging.getLogger().setLevel(logging.INFO)
   create_dire(UPLOAD_FOLDER)
+  create_dire(VIZ_FOLDER)
 
   start_from_terminal(app_pt)
