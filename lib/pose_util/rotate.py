@@ -11,9 +11,12 @@ im_path = "/home/ddk/dongdk/demo.jpg"
 im      = cv2.imread(im_path)
 im      = cv2.resize(im, None, fx=0.5, fy=0.5, \
 										 interpolation=cv2.INTER_LINEAR)
-h, w, _ = im.shape # rows, cols 
+# im      = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+# h, w = im.shape # rows, cols 
+# im = cv2.flip(im, 1)
+h, w, _ = im.shape
 
-angle = 15
+angle = -5
 p     = (w / 2, h / 2)
 scale = 1	
 M     = cv2.getRotationMatrix2D(p, angle, scale)
