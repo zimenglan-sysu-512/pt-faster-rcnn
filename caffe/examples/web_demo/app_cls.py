@@ -183,7 +183,7 @@ class ImagenetClassifier(object):
                            'image. Maybe try another one?')
 
 
-def start_tornado(app, port=5001):
+def start_tornado(app, port=5002):
     http_server = tornado.httpserver.HTTPServer(
         tornado.wsgi.WSGIContainer(app))
     http_server.listen(port)

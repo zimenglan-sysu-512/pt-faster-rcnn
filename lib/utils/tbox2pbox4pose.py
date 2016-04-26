@@ -6,7 +6,7 @@ import numpy as np
 
 t_ratio = .76
 
-def _tbox2pbox(t_bbox, w, h):
+def _tbox2pbox(t_bbox, w, h, t_ratio=0.76):
   # Torso
   x1 = t_bbox[0]
   y1 = t_bbox[1]

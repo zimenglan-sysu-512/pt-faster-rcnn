@@ -18,19 +18,21 @@ import exifutil
 import add_path
 from fast_rcnn.config import cfg, cfg_from_file
 from per_tor_util.person_torso_func_v2 import init_net, pose4images_online
+from utils.tbox2pbox4pose import _tbox2pbox
 import caffe
 
 import cv2
 import skimage.io
 import time
 import pprint
+import socket
 import os, sys
 import argparse
 import numpy as np
 
 ROOT_DIRE     = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + '/../../..')
 UPLOAD_FOLDER = '/home/ddk/download/caffe_demos/'
-VIZ_FOLDER    = UPLOAD_FOLDER + 'app_ptp_viz/'
+VIZ_FOLDER    = UPLOAD_FOLDER + 'app_pose_viz/'
 
 ALLOWED_IMAGE_EXTENSIONS = set(['png', 'bmp', 'jpg', 'jpe', 'jpeg', 'gif'])
 
@@ -42,52 +44,14 @@ def create_dire(path):
   else:
     pass
 
-def viz_pt(image, pt_res, draw_text=False):
-  im        = image.copy()
-  ih, iw, _ = im.shape
-  h, w, p_bbox, p_score, t_bbox, t_score = pt_res
-  assert h == ih
-  assert w == iw
+# Obtain the flask app object
+app = flask.Flask(__name__)
 
-  p_cls = "person"
-  p_x1, p_y1, p_x2, p_y2 = p_bbox
-  p1 = (p_x1, p_y1)
-  p2 = (p_x2, p_y2)
-  cv2.rectangle(im, p1, p2, (32, 224, 72), 3)
-  if draw_text:
-    p3 = (p_x1, p_y1 - 5)
-    cv2.putText(im, '{:s} {:.3f}'.format(p_cls, p_score), p3, \
-                cv2.FONT_HERSHEY_SIMPLEX, .36, (23, 119, 188))
-
-  t_cls = "torso"
-  t_x1, t_y1, t_x2, t_y2 = t_bbox
-  p1 = (t_x1, t_y1)
-  p2 = (t_x2, t_y2)
-  cv2.rectangle(im, p1, p2, (132, 36, 112), 3)
-  if draw_text:
-    p3 = (t_x1, t_y1 - 5)
-    cv2.putText(im, '{:s} {:.3f}'.format(t_cls, t_score), p3, \
-                cv2.FONT_HERSHEY_SIMPLEX, .36, (23, 119, 188))
-
-  return im
-
-
-def pt_res2string(pt_res):
-  h, w, p_bbox, p_score, t_bbox, t_score = pt_res
-  p_bbox = ",".join([str(b) for b in p_bbox])
-  t_bbox = ",".join([str(b) for b in t_bbox])
-  res = (str(h), str(w), p_bbox, str(p_score), t_bbox, str(t_score))
-
-  return res
-
-# Obtain the flask app_pt object
-app_pt = flask.Flask(__name__)
-
-@app_pt.route('/')
+@app.route('/')
 def index():
-  return flask.render_template('index_pt.html', has_result=False)
+  return flask.render_template('index.html', has_result=False)
 
-@app_pt.route('/image_url', methods=['GET'])
+@app.route('/image_url', methods=['GET'])
 def image_url():
   imageurl = flask.request.args.get('imageurl', '')
   try:
@@ -98,7 +62,7 @@ def image_url():
     # For any exception we encounter in reading the image, we will just not continue.
     logging.info('URL Image open error: %s', err)
     return flask.render_template(
-        'index_pt.html', has_result=True, result=(False, 'Cannot open image from URL.')
+        'index.html', has_result=True, result=(False, 'Cannot open image from URL.')
     )
 
   logging.info('Image: %s', imageurl)
@@ -107,20 +71,22 @@ def image_url():
   filename  = os.path.join(UPLOAD_FOLDER, filename_)
   skimage.io.imsave(filename, image)
 
-  image           = cv2.imread(filename)
-  pt_res, pt_time = app_pt.clf.pt_detect(image)
-  viz_im          = viz_pt(image, pt_res)
-  viz_filename    = VIZ_FOLDER + filename_
-  cv2.imwrite(viz_filename, viz_im)
+  res = app.clf.run(filename)
+  if not res[0]:
+    logging.info('URL Image open error (2): %s', res[1])
+    return flask.render_template(
+        'index.html', has_result=True, result=(False, 'Cannot open image from URL.')
+    )
+  else:
+    _, pt_res, pt_time, out_path, pose_time = res
 
-  pose_res, pose_time = app_pt.clf.pose_eval(image, pt_res)
-  result = (True, tuple(pt_res), pt_time, tuple(pose_res), pose_time)
+    viz_im = cv2.imread(out_path)
+    result = (True, tuple(pt_res), pt_time, pose_time)
 
-  return flask.render_template('index_pt.html', has_result=True, \
+    return flask.render_template('index.html', has_result=True, \
                                 result=result, imagesrc=embed_image_html(viz_im))
 
-
-@app_pt.route('/image_upload', methods=['POST'])
+@app.route('/image_upload', methods=['POST'])
 def image_upload():
   try:
     # We will save the file to disk for possible data collection.
@@ -130,38 +96,29 @@ def image_upload():
     filename  = os.path.join(UPLOAD_FOLDER, filename_)
     imagefile.save(filename)
     logging.info('Saving to %s.', filename)
-    # image     = exifutil.open_oriented_im(filename)
-    image     = cv2.imread(filename)
 
   except Exception as err:
     logging.info('Uploaded image open error: %s', err)
     return flask.render_template(
-        'index_pt.html', has_result=True,
+        'index.html', has_result=True,
         result=(False, 'Cannot open uploaded image.')
     )
 
-  pt_res, pt_time = app_pt.clf.pt_detect(image)
-  viz_im          = viz_pt(image, pt_res)
-  viz_filename    = VIZ_FOLDER + filename_
-  cv2.imwrite(viz_filename, viz_im)
-  
-  pose_res, pose_time = app_pt.clf.pose_eval(image, pt_res)
-  result = (True, tuple(pt_res), pt_time, tuple(pose_res), pose_time)
+  res = app.clf.run(filename)
+  if not res[0]:
+    logging.info('Uploaded image open error (2): %s', res[1])
+    return flask.render_template(
+        'index.html', has_result=True,
+        result=(False, 'Cannot open uploaded image.')
+    )
+  else:
+    _, pt_res, pt_time, out_path, pose_time = res
 
-  return flask.render_template('index_pt.html', has_result=True, \
-                               result=result, imagesrc=embed_image_html(viz_im))
+    viz_im = cv2.imread(out_path)
+    result = (True, tuple(pt_res), pt_time, pose_time)
 
-
-def embed_image_html_ori(image, has_resize=False):
-  """Creates an image embedded in HTML base64 format."""
-  image_pil  = Image.fromarray((255 * image).astype('uint8'))
-  if has_resize:
-    image_pil  = image_pil.resize((256, 256))
-  string_buf = StringIO.StringIO()
-  image_pil.save(string_buf, format='png')
-  data       = string_buf.getvalue().encode('base64').replace('\n', '')
-  return 'data:image/png;base64,' + data
-
+    return flask.render_template('index.html', has_result=True, \
+                                result=result, imagesrc=embed_image_html(viz_im))
 
 def embed_image_html(image, has_resize=False):
   """Creates an image embedded in HTML base64 format."""
@@ -174,12 +131,10 @@ def embed_image_html(image, has_resize=False):
   data       = string_buf.getvalue().encode('base64').replace('\n', '')
   return 'data:image/png;base64,' + data
 
-
 def allowed_file(filename):
   return (
       '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_IMAGE_EXTENSIONS
   )
-
 
 def default_args(gpu_id):
   '''args for pose pipeline'''
@@ -202,6 +157,9 @@ def default_args(gpu_id):
   args['torso_ratio']       = 0
   # viz args
   args['draw_text']         = False
+  # socket
+  args['client_addr']       = "127.0.0.1"
+  args['port']              = 8192
   # check
   for key, val in args.iteritems():
     if isinstance(val, basestring) and os.path.isfile(val) and not os.path.exists(val):
@@ -268,77 +226,85 @@ class PosePipeline(object):
     init_net(self.person_caffemodel, self.torso_caffemodel)
     logging.info('\n\ninit_net of pt done!')
 
+    # buffer size 
+    self.BUF_SIZE = 2048
+    # ip and port 
+    self.server_addr = ('127.0.0.1', 8192)  
+
+    try : 
+      # use TCP and return socket object
+      self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    except socket.error, msg :
+      print "Creating Socket Failure. Error Code : " + str(msg[0]) + " Message : " + msg[1]
+      sys.exit()
+    # connect to server
+    self.client.connect(self.server_addr)
+    print "\nconnect to", self.server_addr, "\n"
+
     time.sleep(1)
 
-  def pt_detect(self, image):
+  def run(self, im_path):
+    ''''''
     try:
+      image     = cv2.imread(im_path)  
       starttime = time.time()
       pt_res    = pose4images_online(self.person_caffemodel, self.torso_caffemodel, \
                                      image, self.classes, self.pt_cls, choice=self.pt_choice)
       endtime   = time.time()
+      pt_time   = '%.3f' % (endtime - starttime)
 
-      print "pt_res:", pt_res
-      return pt_res, '%.3f' % (endtime - starttime)
+      # print pt_res
+      # send data
+      h, w, p_bbox, p_score, t_bbox, t_score = pt_res
+      p_bbox2 = _tbox2pbox(t_bbox, w, h, t_ratio=0.78)
+      # _. _, p_bbox, _, t_bbox, _ = pt_res
+      p_bbox2 = [str(b) for b in p_bbox2]
+      t_bbox  = [str(b) for b in t_bbox]
+      data    = im_path.strip() + " 0 " + " ".join(p_bbox2).strip() + " " \
+                                + " ".join(t_bbox).strip()
+      print "data send:", data
+      data = self.client.sendall(data)
 
+      # recieve data
+      data = self.client.recv(self.BUF_SIZE)
+      print "data recieve:", data
+      out_path, pose_time = data.split()
+
+      # return True, pt_res, pt_time, im_path, 0 
+      return True, pt_res, pt_time, out_path, pose_time 
     except Exception as err:
       logging.info('Person and Torso detection error: %s', err)
       return (False, 'Something went wrong when detect person & torso for the image. Maybe try another one?')
 
-  def pose_eval(self, image, pt_res):
-    try:
-      starttime = time.time()
-
-      h, w, p_bbox, _, t_bbox, _ = pt_res
-      ih, iw, _ = image.shape
-      assert h == ih
-      assert w == iw
-
-      pose_res = ""
-
-      endtime   = time.time()
-
-      return pose_res, '%.3f' % (endtime - starttime)
-
-    except Exception as err:
-      logging.info('Pose estimation error: %s', err)
-      return (False, 'Something went wrong when pose estimation for the image. Maybe try another one?')
-
-def start_tornado(app_pt, port=5000):
-  http_server = tornado.httpserver.HTTPServer(
-      tornado.wsgi.WSGIContainer(app_pt))
+  
+def start_tornado(app, port=5000):
+  http_server = tornado.httpserver.HTTPServer(tornado.wsgi.WSGIContainer(app))
   http_server.listen(port)
   print("Tornado server starting on port {}".format(port))
   tornado.ioloop.IOLoop.instance().start()
 
-
-def start_from_terminal(app_pt):
+def start_from_terminal(app):
   """
   Parse command line options and start the server.
   """
   parser = optparse.OptionParser()
-  parser.add_option(
-      '-d', '--debug',
-      help="enable debug mode",
+  parser.add_option('-d', '--debug', help="enable debug mode",
       action="store_true", default=False)
-  parser.add_option(
-      '-p', '--port',
-      help="which port to serve content on",
+  parser.add_option('-p', '--port', help="which port to serve content on",
       type='int', default=5000)
-  parser.add_option(
-      '-g', '--gpu',
-      help="use gpu mode",
+  parser.add_option('-g', '--gpu', help="use gpu mode",
       action='store_true', default=0)
 
   opts, args    = parser.parse_args()
   pipeline_args = default_args(opts.gpu)
 
   # Initialize classifier + warm start by forward for allocation
-  app_pt.clf = PosePipeline(pipeline_args)
+  app.clf = PosePipeline(pipeline_args)
 
   if opts.debug:
-    app_pt.run(debug=True, host='0.0.0.0', port=opts.port)
+    app.run(debug=True, host='0.0.0.0', port=opts.port)
   else:
-    start_tornado(app_pt, opts.port)
+    start_tornado(app, opts.port)
 
 
 if __name__ == '__main__':
@@ -346,4 +312,4 @@ if __name__ == '__main__':
   create_dire(UPLOAD_FOLDER)
   create_dire(VIZ_FOLDER)
 
-  start_from_terminal(app_pt)
+  start_from_terminal(app)
