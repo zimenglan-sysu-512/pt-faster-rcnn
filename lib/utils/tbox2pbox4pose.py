@@ -29,6 +29,53 @@ def _tbox2pbox(t_bbox, w, h, t_ratio=0.76):
   p_bbox = [px1, py1, px2, py2]
   return p_bbox
 
+def _tbox2pbox2(t_bbox, w, h, xr=0.72, yr=0.6):
+  # Torso
+  x1 = t_bbox[0]
+  y1 = t_bbox[1]
+  x2 = t_bbox[2]
+  y2 = t_bbox[3]
+  # Person
+  diff_x = x1 - x2
+  diff_y = y1 - y2
+  t_dit = diff_x * diff_x + diff_y * diff_y
+  t_dit = math.sqrt(t_dit)
+  t_x   = int(t_dit * xr)
+  t_y   = int(t_dit * yr)
+  px1 = x1 - t_x
+  py1 = y1 - t_y
+  px2 = x2 + t_x
+  py2 = y2 + t_y
+  px1 = max(1, px1)
+  py1 = max(1, py1)
+  px2 = min(w - 2, px2)
+  py2 = min(h - 2, py2)
+  p_bbox = [px1, py1, px2, py2]
+  return p_bbox
+
+def _tbox2pbox3(p_bbox, t_bbox, w, h, xr=0.72, yr=0.68):
+  # Torso
+  p_x1, p_y1, p_x2, p_y2 = p_bbox
+  t_x1, t_y1, t_x2, t_y2 = t_bbox
+  # Person
+  diff_x = t_x2 - t_x1
+  diff_y = t_y2 - t_y1
+  t_dit = diff_x * diff_x + diff_y * diff_y
+  t_dit = math.sqrt(t_dit)
+  t_x   = int(t_dit * xr)
+  t_y   = int(t_dit * yr)
+  px1 = t_x1 - t_x
+  py1 = t_y1 - t_y
+  px2 = t_x2 + t_x
+  py2 = t_y2 + t_y
+  px1 = max(1, px1)
+  py1 = max(1, py1)
+  px2 = min(w - 2, px2)
+  py2 = min(h - 2, py2)
+
+  p_bbox2 = [p_x1, py1, p_x2, py2]
+  return p_bbox2
+
 def tbox2pbox4pose(in_file, out_file, n_obj=9):
 	fh1 = open(in_file)
 	fh2 = open(out_file, "w")

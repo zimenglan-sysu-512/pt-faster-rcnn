@@ -3,6 +3,7 @@
 import os
 import sys
 import cv2
+import numpy as np
 
 # url:
 # 		http://opencv-python-tutroals.readthedocs.org/en/latest/py_tutorials/py_imgproc/py_geometric_transformations/py_geometric_transformations.html
@@ -26,6 +27,13 @@ cv2.waitKey(0)
 cv2.destroyAllWindows()
 
 im2   = cv2.warpAffine(im, M, (w, h))
-cv2.imshow("rotated demo", im2)
+# cv2.imshow("rotated demo", im2)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+
+M   = np.float32([[1, 0, -10],[0, 1, 5]])
+im3 = cv2.warpAffine(im, M, (w, h))
+
+cv2.imshow("translate demo", im3)
 cv2.waitKey(0)
 cv2.destroyAllWindows()

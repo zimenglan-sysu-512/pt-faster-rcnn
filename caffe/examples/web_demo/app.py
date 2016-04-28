@@ -18,7 +18,7 @@ import exifutil
 import add_path
 from fast_rcnn.config import cfg, cfg_from_file
 from per_tor_util.person_torso_func_v2 import init_net, pose4images_online
-from utils.tbox2pbox4pose import _tbox2pbox
+from utils.tbox2pbox4pose import _tbox2pbox, _tbox2pbox2, _tbox2pbox3
 import caffe
 
 import cv2
@@ -95,7 +95,7 @@ def image_upload():
                 werkzeug.secure_filename(imagefile.filename)
     filename  = os.path.join(UPLOAD_FOLDER, filename_)
     imagefile.save(filename)
-    logging.info('Saving to %s.', filename)
+    logging.info('Saving to %s .', filename)
 
   except Exception as err:
     logging.info('Uploaded image open error: %s', err)
@@ -256,11 +256,18 @@ class PosePipeline(object):
       # print pt_res
       # send data
       h, w, p_bbox, p_score, t_bbox, t_score = pt_res
-      p_bbox2 = _tbox2pbox(t_bbox, w, h, t_ratio=0.78)
-      # _. _, p_bbox, _, t_bbox, _ = pt_res
+      # p_bbox2 = _tbox2pbox(t_bbox, w, h, t_ratio=0.78)
+      p_bbox2 = _tbox2pbox2(t_bbox, w, h, xr=0.8, yr=0.78)
+      # p_bbox2 = _tbox2pbox3(p_bbox, t_bbox, w, h, xr=0.76, yr=0.64)
+      p_bbox  = [str(b) for b in p_bbox]
       p_bbox2 = [str(b) for b in p_bbox2]
       t_bbox  = [str(b) for b in t_bbox]
+
+      # p_bbox: produce by t_bbox
+      # p_bbox: produce by person detector
+      # t_bbox: produce by toros  detector
       data    = im_path.strip() + " 0 " + " ".join(p_bbox2).strip() + " " \
+                                + " ".join(p_bbox).strip() + " " \
                                 + " ".join(t_bbox).strip()
       print "data send:", data
       data = self.client.sendall(data)
