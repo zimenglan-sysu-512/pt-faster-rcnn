@@ -6,6 +6,31 @@ import numpy as np
 
 t_ratio = .76
 
+def _pbox2tbox(p_bbox, wr=0.25, hr=0.25):
+  p_x1, p_y1, p_x2, p_y2 = p_bbox
+  w = p_x2 - p_x1 + 1
+  h = p_y2 - p_y1 + 1
+
+  w2   = int(w * wr)
+  t_x1 = p_x1 + w2
+  t_x2 = p_x2 - w2
+
+  h2   = int(h * hr)
+  t_y1 = p_y1 + h2
+  t_y2 = p_y2 - h2
+
+  return t_x1, t_y1, t_x2, t_y2
+
+def _pt_bboxes2res(pt_bboxes, w, h):
+  pt_res = []
+  for pt_bbox in pt_bboxes:
+    j, p_x1, p_x2, p_y1, p_y2, t_x1, t_y1, t_x2, t_y2 = pt_bbox
+    p_bbox = [p_x1, p_y1, p_x2, p_y2]
+    t_bbox = [t_x1, t_y1, t_x2, t_y2]
+    p_score, t_score = 0, 0
+    pt_res.append(tuple([h, w, p_bbox, p_score, t_bbox, t_score]))
+  return pt_res
+
 def _tbox2pbox(t_bbox, w, h, t_ratio=0.76):
   # Torso
   x1 = t_bbox[0]

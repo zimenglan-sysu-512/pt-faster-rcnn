@@ -12,10 +12,12 @@ See README.md for installation instructions before running.
 """
 
 import _init_paths
+from fast_rcnn.config import cfg
 from fast_rcnn.test_ori import im_detect
 from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
 from per_tor_util.person_torso_func import *
+from utils.tbox2pbox4pose import _pbox2tbox, _tbox2pbox2
 import caffe
 
 import cv2
@@ -715,10 +717,6 @@ def _bbox4images_show_v31(p_net, t_net, im, classes, pt_cls):
   p_x1, p_y1, p_x2, p_y2 = p_bbox
 
   h, w, _  = im.shape
-  # x1       = p_x1 - per_tor_dxy
-  # y1       = p_y1 - per_tor_dxy
-  # x2       = p_x2 + per_tor_dxy
-  # y2       = p_y2 + per_tor_dxy
   x1       = max(x1, 1)
   y1       = max(y1, 1)
   x2       = min(x2, w - 2)
@@ -755,3 +753,170 @@ def pose4images_online(p_net, t_net, image, classes, pt_cls, choice=0):
     raise ValueError("NotImplemented!")
   
   return res
+
+# using nms and threshold
+def _image2bbox2(net, im, classes, target_cls, cls_type=True):
+  """
+  Detect object classes in an image using pre-computed object proposals.
+    >= threshold (maybe empty)
+  """
+  if cls_type:
+    nms_thres  = cfg.TEST.P_NMS_THRES  # person
+    conf_thres = cfg.TEST.P_CONF_THRES 
+  else:
+    nms_thres  = cfg.TEST.T_NMS_THRES  # torso
+    conf_thres = cfg.TEST.T_CONF_THRES 
+
+  timer      = Timer()
+  timer.tic()
+
+  # forward
+  scores, boxes, = im_detect(net, im)
+  # nms and threshold
+  bboxes     = []
+  has_target = len(target_cls) > 0
+  for ind, cls in enumerate(classes[1:]):
+    if  has_target and cls not in target_cls:
+      continue
+
+    ind     += 1 # ignore bg
+    boxes2   = boxes[:, 4 * ind: 4 * (ind + 1)]
+    scores2  = scores[:, ind]
+    dets     = np.hstack((boxes2, scores2[:, np.newaxis])).astype(np.float32)
+    keep     = nms(dets, nms_thres)
+    dets     = dets[keep, :]
+
+    inds = np.where(dets[:, -1] >= conf_thres)[0]
+    if len(inds) == 0:
+      break
+    
+    for i in inds:
+      bbox  = dets[i, :4]
+      bbox  = [int(b) for b in bbox]
+      score = dets[i, -1]
+      bboxes.append((bbox, score, cls))
+
+  total_time = timer.toc(average=False)
+  print "Detection took %ss for %s object proposals" % (total_time, boxes.shape[0])
+
+  if len(bboxes) <= 0:
+    return None
+  return bboxes
+
+def pose4images_online2(p_net, t_net, image, classes, pt_cls, choice=0):
+  '''process each image: person & torso detection'''
+  if isinstance(image, basestring) and os.path.isfile(image) and os.path.exists(image):
+    im = cv2.imread(image)
+  else:
+    im = image.copy();
+  im_shape = im.shape
+  h        = im.shape[0]
+  w        = im.shape[1]
+
+  # person detection
+  p_bboxes = _image2bbox2(p_net, im, classes, pt_cls, cls_type=True)
+
+  pt_bboxes = []
+  if p_bboxes is not None:
+    if choice == 0:
+      t_bboxes = _image2bbox2(t_net, im, classes, pt_cls, cls_type=False)
+      if t_bboxes is not None:
+        print "person & torso bounding boxes match -- 0 (choice: %s)" % (choice,)
+        pn    = len(p_bboxes)
+        tn    = len(t_bboxes)
+        flags = [False for j in xrange(tn)]
+
+        for j in xrange(pn):
+          p_bbox                 = p_bboxes[j]
+          bbox, score, cls       = p_bbox
+          p_x1, p_y1, p_x2, p_y2 = bbox
+
+          flag = True
+          for j2 in xrange(tn):
+            if flags[j2]:
+              continue
+            t_bbox              = t_bboxes[j2]
+            bbox2, score2, cls2 = t_bbox
+            if _within_bbox(bbox, bbox2):
+              flags[j2] = True
+              flag      = False
+              t_x1, t_y1, t_x2, t_y2 = bbox2
+              pt_bbox   = [j, p_x1, p_y1, p_x2, p_y2, t_x1, t_y1, t_x2, t_y2]
+              pt_bboxes.append(pt_bbox)
+              print "person bbox and torso bbox from detection -- ind:", j
+              print pt_bbox
+              break
+
+          if flag:
+            print "torso bbox from person bbox by hand -- ind:", j
+            t_x1, t_y1, t_x2, t_y2 = _pbox2tbox(bbox)
+            pt_bbox = [j, p_x1, p_y1, p_x2, p_y2, t_x1, t_y1, t_x2, t_y2]
+            pt_bboxes.append(pt_bbox)
+
+        j = pn
+        for j2 in xrange(tn):
+          if flags[j2]:
+            continue
+          print "person bbox from torso bbox by hand -- ind:", j
+          t_bbox                 = t_bboxes[j2]
+          bbox2, score2, cls2    = t_bbox
+          bbox = _tbox2pbox2(bbox2, w, h, xr=0.8, yr=0.78)
+          p_x1, p_y1, p_x2, p_y2 = bbox
+          t_x1, t_y1, t_x2, t_y2 = bbox2
+          pt_bbox = [j, p_x1, p_y1, p_x2, p_y2, t_x1, t_y1, t_x2, t_y2]
+          pt_bboxes.append(pt_bbox)
+          j = j + 1
+      else: # by hand
+        print "person & torso bounding boxes match -- 1 (choice: %s)" % (choice,)
+        for j in xrange(len(p_bboxes)):
+          print "torso bbox from person bbox by hand -- ind:", j
+          p_bbox                 = p_bboxes[j]
+          bbox, score, cls       = p_bbox
+          p_x1, p_y1, p_x2, p_y2 = bbox
+          t_x1, t_y1, t_x2, t_y2 = _pbox2tbox(bbox)
+          pt_bbox = [j, p_x1, p_y1, p_x2, p_y2, t_x1, t_y1, t_x2, t_y2]
+          pt_bboxes.append(pt_bbox)
+    elif choice == 1:
+      print "person & torso bounding boxes match -- 2 (choice: %s)" % (choice,)
+      for j in xrange(len(p_bboxes)):
+        p_bbox                 = p_bboxes[j]
+        bbox, score, cls       = p_bbox
+        p_x1, p_y1, p_x2, p_y2 = bbox
+        p_x1                   = max(p_x1, 1)
+        p_y1                   = max(p_y1, 1)
+        p_x2                   = min(p_x2, w - 2)
+        p_y2                   = min(p_y2, h - 2)
+
+        # torso detection
+        im2    = im[p_y1: p_y2, p_x1: p_x2]
+        t_bbox = _image2bbox_top1(t_net, im2, classes, pt_cls)
+
+        t_bbox                 = t_bbox[0]
+        bbox2, score2, _       = t_bbox
+        t_x1, t_y1, t_x2, t_y2 = bbox2
+        t_x1                  += p_x1
+        t_y1                  += p_y1
+        t_x2                  += p_x1
+        t_y2                  += p_y1
+        
+        pt_bbox = [j, p_x1, p_y1, p_x2, p_y2, t_x1, t_y1, t_x2, t_y2]
+        pt_bboxes.append(pt_bbox)
+    else:
+      raise ValueError("NotImplemented!")
+  else:
+    t_bboxes = _image2bbox2(t_net, im, classes, pt_cls, cls_type=False)
+    if t_bboxes is not None:
+      print "person & torso bounding boxes match -- 3 (choice: %s)" % (choice,)
+      for j in xrange(len(t_bboxes)):
+        print "person bbox and torso bbox from detection -- ind:", j
+        t_bbox                 = t_bboxes[j]
+        bbox2, score2, cls2    = t_bbox
+        bbox = _tbox2pbox2(bbox2, w, h, xr=0.8, yr=0.78)
+        p_x1, p_y1, p_x2, p_y2 = bbox
+        t_x1, t_y1, t_x2, t_y2 = bbox2
+        pt_bbox = [j, p_x1, p_y1, p_x2, p_y2, t_x1, t_y1, t_x2, t_y2]
+        pt_bboxes.append(pt_bbox)
+
+  if len(pt_bboxes) <= 0:
+    return None 
+  return pt_bboxes

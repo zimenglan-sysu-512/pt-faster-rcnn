@@ -17,7 +17,8 @@ import exifutil
 
 import add_path
 from fast_rcnn.config import cfg, cfg_from_file
-from per_tor_util.person_torso_func_v2 import init_net, pose4images_online
+from utils.tbox2pbox4pose import _pt_bboxes2res
+from per_tor_util.person_torso_func_v2 import init_net, pose4images_online, pose4images_online2
 import caffe
 
 import cv2
@@ -72,6 +73,29 @@ def viz_pt(image, pt_res, draw_text=False):
 
   return im
 
+def _viz_pt2(image, pt_bboxes):
+  print "_viz_pt2"
+  im        = image.copy()
+  ih, iw, _ = im.shape
+  
+  n = len(pt_bboxes)
+  for j in xrange(n):
+    pt_bbox = pt_bboxes[j]
+    j2, p_x1, p_y1, p_x2, p_y2, t_x1, t_y1, t_x2, t_y2 = pt_bbox
+    assert j == j2
+
+    p_cls = "person"
+    p1 = (p_x1, p_y1)
+    p2 = (p_x2, p_y2)
+    cv2.rectangle(im, p1, p2, (32, 224, 72), 3)
+  
+    t_cls = "torso"
+    p1 = (t_x1, t_y1)
+    p2 = (t_x2, t_y2)
+    cv2.rectangle(im, p1, p2, (132, 36, 112), 3)
+
+  return im
+
 def pt_res2string(pt_res):
   h, w, p_bbox, p_score, t_bbox, t_score = pt_res
   p_bbox = ",".join([str(b) for b in p_bbox])
@@ -86,6 +110,48 @@ app_pt = flask.Flask(__name__)
 @app_pt.route('/')
 def index():
   return flask.render_template('index_pt.html', has_result=False)
+
+def pt_res1(image, filename):
+  res = app_pt.clf.pt_detect(image)
+  if not res[0]:
+    result = (True, False, "no result", pt_time, tuple(pose_res), pose_time)
+    return result, image
+
+  print res
+  flag, pt_res, pt_time = res
+  assert flag == True
+
+  viz_im          = viz_pt(image, pt_res)
+  viz_filename    = VIZ_FOLDER + filename
+  cv2.imwrite(viz_filename, viz_im)
+
+  pose_res, pose_time = app_pt.clf.pose_eval(image, pt_res)
+  result = (True, True, [tuple(pt_res)], pt_time, tuple(pose_res), pose_time)
+
+  return result, viz_im
+
+def pt_res2(image, filename):
+  res = app_pt.clf.pt_detect2(image)
+  if not res[0]:
+    pt_time = res[1]
+    pose_time = 0
+    result = (True, False, ["no result",], pt_time, "no result", pose_time)
+    return result, image
+
+  flag, viz_im, pt_bboxes, pt_time = res
+  assert flag == True
+
+  viz_filename    = VIZ_FOLDER + filename
+  cv2.imwrite(viz_filename, viz_im)
+
+  pose_res  = "no result"
+  pose_time = "0"
+  im_shape  = viz_im.shape
+  h, w      = im_shape[0], im_shape[1]
+  pt_res    = _pt_bboxes2res(pt_bboxes, w, h)
+  result    = (True, True, pt_res, pt_time, tuple(pose_res), pose_time)
+
+  return result, viz_im
 
 @app_pt.route('/image_url', methods=['GET'])
 def image_url():
@@ -108,13 +174,9 @@ def image_url():
   skimage.io.imsave(filename, image)
 
   image           = cv2.imread(filename)
-  pt_res, pt_time = app_pt.clf.pt_detect(image)
-  viz_im          = viz_pt(image, pt_res)
-  viz_filename    = VIZ_FOLDER + filename_
-  cv2.imwrite(viz_filename, viz_im)
-
-  pose_res, pose_time = app_pt.clf.pose_eval(image, pt_res)
-  result = (True, tuple(pt_res), pt_time, tuple(pose_res), pose_time)
+  
+  # result, viz_im = pt_res1(image, filename_)
+  result, viz_im = pt_res2(image, filename_)
 
   return flask.render_template('index_pt.html', has_result=True, \
                                 result=result, imagesrc=embed_image_html(viz_im))
@@ -139,13 +201,8 @@ def image_upload():
         result=(False, 'Cannot open uploaded image.')
     )
 
-  pt_res, pt_time = app_pt.clf.pt_detect(image)
-  viz_im          = viz_pt(image, pt_res)
-  viz_filename    = VIZ_FOLDER + filename_
-  cv2.imwrite(viz_filename, viz_im)
-  
-  pose_res, pose_time = app_pt.clf.pose_eval(image, pt_res)
-  result = (True, tuple(pt_res), pt_time, tuple(pose_res), pose_time)
+  # result, viz_im = pt_res1(image, filename_)
+  result, viz_im = pt_res2(image, filename_)
 
   return flask.render_template('index_pt.html', has_result=True, \
                                result=result, imagesrc=embed_image_html(viz_im))
@@ -274,7 +331,28 @@ class PosePipeline(object):
       endtime   = time.time()
 
       print "pt_res:", pt_res
-      return pt_res, '%.3f' % (endtime - starttime)
+      return True, pt_res, '%.3f' % (endtime - starttime)
+
+    except Exception as err:
+      logging.info('Person and Torso detection error: %s', err)
+      return (False, 'Something went wrong when detect person & torso for the image. Maybe try another one?')
+
+  def pt_detect2(self, image):
+    try:
+      starttime = time.time()
+      pt_bboxes = pose4images_online2(self.person_caffemodel, \
+                                      self.torso_caffemodel,  \
+                                      image, self.classes, self.pt_cls, \
+                                      choice=self.pt_choice)
+      if pt_bboxes is not None:
+        im = _viz_pt2(image, pt_bboxes)
+      endtime   = time.time()
+      pt_time   = '%.3f' % (endtime - starttime)
+
+      if pt_bboxes is None:
+        return (False, pt_time)
+
+      return True, im, pt_bboxes, pt_time
 
     except Exception as err:
       logging.info('Person and Torso detection error: %s', err)

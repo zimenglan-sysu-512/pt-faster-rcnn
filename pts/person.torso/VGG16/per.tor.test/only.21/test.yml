@@ -3,4 +3,8 @@ USE_GPU_NMS: False
 TEST:
   HAS_RPN: True
   MAX_SIZE: 1000
+  P_NMS_THRES: 0.273
+  P_CONF_THRES: 0.873
+  T_NMS_THRES: 0.213
+  T_CONF_THRES: 0.873
   SCALES: !!python/tuple [600, ]

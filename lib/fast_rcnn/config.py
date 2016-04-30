@@ -306,6 +306,13 @@ __C.TEST.DATA = "data"
 __C.TEST.CACHE = "cache"
 # 
 __C.TEST.FASHIONT_HRESHOLD = 0.7
+# 
+__C.TEST.NMS_THRES  = 0.3
+__C.TEST.CONF_THRES = 0.8
+__C.TEST.P_NMS_THRES  = 0.3
+__C.TEST.P_CONF_THRES = 0.8
+__C.TEST.T_NMS_THRES  = 0.3
+__C.TEST.T_CONF_THRES = 0.8
 
 # ###############################################################################################
 #

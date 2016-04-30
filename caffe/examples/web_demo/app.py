@@ -17,7 +17,8 @@ import exifutil
 
 import add_path
 from fast_rcnn.config import cfg, cfg_from_file
-from per_tor_util.person_torso_func_v2 import init_net, pose4images_online
+from utils.tbox2pbox4pose import _pt_bboxes2res
+from per_tor_util.person_torso_func_v2 import init_net, pose4images_online, pose4images_online2
 from utils.tbox2pbox4pose import _tbox2pbox, _tbox2pbox2, _tbox2pbox3
 import caffe
 
@@ -51,6 +52,58 @@ app = flask.Flask(__name__)
 def index():
   return flask.render_template('index.html', has_result=False)
 
+def ptp_res_single(filename, method_flag):
+  ''''''
+  res = app.clf.run(filename)
+
+  if not res[0]:
+    if not method_flag:
+      logging.info('URL Image open error (2): %s', res[1])
+      return flask.render_template(
+          'index.html', has_result=True, result=(False, 'Cannot open image from URL.')
+      )
+    else:
+      logging.info('Uploaded image open error (2): %s', res[1])
+      return flask.render_template(
+          'index.html', has_result=True,
+          result=(False, 'Cannot open uploaded image.')
+      )
+  else:
+    _, pt_res, pt_time, out_path, pose_time = res
+    viz_im = cv2.imread(out_path)
+    result = (True, True, [tuple(pt_res)], pt_time, pose_time)
+
+    print "hello ddk"
+    print result
+    return flask.render_template('index.html', has_result=True, \
+                                 result=result, imagesrc=embed_image_html(viz_im))
+
+def ptp_res_multi(filename, method_flag):
+  ''''''
+  res = app.clf.run_multi(filename)
+
+  if not res[0]:
+    if not method_flag:
+      logging.info('URL Image open error (2): %s', res[1])
+      return flask.render_template(
+          'index.html', has_result=True, result=(False, 'Cannot open image from URL.')
+      )
+    else:
+      logging.info('Uploaded image open error (2): %s', res[1])
+      return flask.render_template(
+          'index.html', has_result=True,
+          result=(False, 'Cannot open uploaded image.')
+      )
+  else:
+    _, flag, pt_res, pt_time, out_path, pose_time = res
+
+    viz_im = cv2.imread(out_path)
+    result = (True, flag, pt_res, pt_time, pose_time)
+
+    return flask.render_template('index.html', has_result=True, \
+                                 result=result, imagesrc=embed_image_html(viz_im))
+
+
 @app.route('/image_url', methods=['GET'])
 def image_url():
   imageurl = flask.request.args.get('imageurl', '')
@@ -71,20 +124,8 @@ def image_url():
   filename  = os.path.join(UPLOAD_FOLDER, filename_)
   skimage.io.imsave(filename, image)
 
-  res = app.clf.run(filename)
-  if not res[0]:
-    logging.info('URL Image open error (2): %s', res[1])
-    return flask.render_template(
-        'index.html', has_result=True, result=(False, 'Cannot open image from URL.')
-    )
-  else:
-    _, pt_res, pt_time, out_path, pose_time = res
-
-    viz_im = cv2.imread(out_path)
-    result = (True, tuple(pt_res), pt_time, pose_time)
-
-    return flask.render_template('index.html', has_result=True, \
-                                result=result, imagesrc=embed_image_html(viz_im))
+  # return ptp_res_single(filename, False)
+  return ptp_res_multi(filename, False)
 
 @app.route('/image_upload', methods=['POST'])
 def image_upload():
@@ -104,22 +145,9 @@ def image_upload():
         result=(False, 'Cannot open uploaded image.')
     )
 
-  res = app.clf.run(filename)
-  if not res[0]:
-    logging.info('Uploaded image open error (2): %s', res[1])
-    return flask.render_template(
-        'index.html', has_result=True,
-        result=(False, 'Cannot open uploaded image.')
-    )
-  else:
-    _, pt_res, pt_time, out_path, pose_time = res
-
-    viz_im = cv2.imread(out_path)
-    result = (True, tuple(pt_res), pt_time, pose_time)
-
-    return flask.render_template('index.html', has_result=True, \
-                                result=result, imagesrc=embed_image_html(viz_im))
-
+  # return ptp_res_single(filename, True)
+  return ptp_res_multi(filename, True)
+  
 def embed_image_html(image, has_resize=False):
   """Creates an image embedded in HTML base64 format."""
   image2     = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -279,6 +307,65 @@ class PosePipeline(object):
 
       # return True, pt_res, pt_time, im_path, 0 
       return True, pt_res, pt_time, out_path, pose_time 
+    except Exception as err:
+      logging.info('Person and Torso detection error: %s', err)
+      return (False, 'Something went wrong when detect person & torso for the image. Maybe try another one?')
+
+  def run_multi(self, im_path):
+    ''''''
+    try:
+      starttime = time.time()
+      image     = cv2.imread(im_path)  
+      pt_bboxes = pose4images_online2(self.person_caffemodel, \
+                                      self.torso_caffemodel,  \
+                                      image, self.classes, self.pt_cls, \
+                                      choice=self.pt_choice)
+      sp   = image.shape
+      h, w = sp[0], sp[1]
+
+      if pt_bboxes is not None:
+        n    = len(pt_bboxes)
+        data = im_path.strip()
+
+        for j in xrange(n):
+          pt_bbox = pt_bboxes[j]
+          j2, p_x1, p_y1, p_x2, p_y2, t_x1, t_y1, t_x2, t_y2 = pt_bbox
+          assert j == j2
+          p_bbox = p_x1, p_y1, p_x2, p_y2
+          t_bbox = t_x1, t_y1, t_x2, t_y2
+
+          p_bbox2 = _tbox2pbox2(t_bbox, w, h, xr=0.8, yr=0.78)
+          p_bbox  = [str(b) for b in p_bbox]
+          p_bbox2 = [str(b) for b in p_bbox2]
+          t_bbox  = [str(b) for b in t_bbox]
+          # p_bbox: produce by t_bbox
+          # p_bbox: produce by person detector
+          # t_bbox: produce by toros  detector
+          data    = data + " " + str(j) +  \
+                           " " + " ".join(p_bbox2).strip() + \
+                           " " + " ".join(p_bbox ).strip() + \
+                           " " + " ".join(t_bbox ).strip()
+        data      = data.strip()
+        pt_res    = _pt_bboxes2res(pt_bboxes, w, h)
+
+        endtime   = time.time()
+        pt_time   = '%.3f' % (endtime - starttime)
+
+        print "data send:", data
+        data = self.client.sendall(data)
+
+        # recieve data
+        data = self.client.recv(self.BUF_SIZE)
+        print "data recieve:", data
+        out_path, pose_time = data.split()
+
+        return True, True, pt_res, pt_time, out_path, pose_time
+      else:
+        endtime   = time.time()
+        pt_time   = '%.3f' % (endtime - starttime)
+        pose_time = '%.3f' % (0,)
+        return True, False, None, pt_time, im_path, pose_time
+
     except Exception as err:
       logging.info('Person and Torso detection error: %s', err)
       return (False, 'Something went wrong when detect person & torso for the image. Maybe try another one?')
