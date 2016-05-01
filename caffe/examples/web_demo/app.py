@@ -73,8 +73,7 @@ def ptp_res_single(filename, method_flag):
     viz_im = cv2.imread(out_path)
     result = (True, True, [tuple(pt_res)], pt_time, pose_time)
 
-    print "hello ddk"
-    print result
+    print "\n"
     return flask.render_template('index.html', has_result=True, \
                                  result=result, imagesrc=embed_image_html(viz_im))
 
@@ -100,6 +99,7 @@ def ptp_res_multi(filename, method_flag):
     viz_im = cv2.imread(out_path)
     result = (True, flag, pt_res, pt_time, pose_time)
 
+    print "\n"
     return flask.render_template('index.html', has_result=True, \
                                  result=result, imagesrc=embed_image_html(viz_im))
 
