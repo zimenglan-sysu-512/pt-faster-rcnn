@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Pose estimation demos (SYSU)">
+    <meta name="description" content="Person and Torso Detection Demos (SYSU)">
     <meta name="author" content="DDK">
 
-    <title>Pose Estimation Demos (SYSU)</title>
+    <title>Person and Torso Detection Demos (SYSU)</title>
 
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
 
@@ -49,15 +49,15 @@
     <!-- Begin page content -->
     <div class="container">
       <div class="page-header">
-        <h1><a href="/">Pose Estimation Demos (SYSU)</a></h1>
+        <h1><a href="/">Person and Torso Detection Demos (SYSU)</a></h1>
         <p>
-          The <font color="#43ca89">Pose estimation</font> is a pipeline consisting of three components: <a href="https://github.com/zimenglan-sysu-512/pt-faster-rcnn">person detection, torso detection</a> and <a href="https://github.com/zimenglan-sysu-512/pose_action_caffe">human joints estimation</a>, based on</a> <a href="http://caffe.berkeleyvision.org/">Caffe:neural network library</a> which makes implementing state-of-the-art computer vision systems easy.
+          The <font color="#43ca89">Person and Torso Detection</font> is a pipeline consisting of two components: <a href="https://github.com/zimenglan-sysu-512/pt-faster-rcnn">person detection and torso detection</a> , based on</a> <a href="http://caffe.berkeleyvision.org/">Caffe:neural network library</a> which makes implementing state-of-the-art computer vision systems easy.
         </p>
       </div>
 
       <div>
-        <h2>Pose Estimation</h2>
-        <a href="/image_url?imageurl=http://ww4.sinaimg.cn/mw690/c260f7abjw1exg1pwtg1gj20ej0m8jt0.jpg">Click for a Quick Example</a>
+        <h2>Person and Torso Detection</h2>
+        <a href="/image_url?imageurl=http://u1.img.mobile.sina.cn/public/files/image/620x300_img572c5557772e3.png">Click for a Quick Example</a>
       </div>
 
       <!-- ---------------------------------------------------------- -->
@@ -70,10 +70,9 @@
         {% else %}
 
           <p> Person and Torso detection tooks {{ result[3] }} seconds. </p>
-          <p> Pose estimation tooks {{ result[5] }} seconds. </p>
 
           {% if not result[1] %}
-            <p> Don't have person and torso results and pose estimation results </p>
+            <p> Don't have person and torso results results </p>
           {% else %}
               <p> -------------------------------------------------- </p>
             

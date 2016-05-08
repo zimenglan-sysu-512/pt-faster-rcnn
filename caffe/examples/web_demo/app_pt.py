@@ -88,11 +88,17 @@ def _viz_pt2(image, pt_bboxes):
     p1 = (p_x1, p_y1)
     p2 = (p_x2, p_y2)
     cv2.rectangle(im, p1, p2, (32, 224, 72), 3)
+    p3 = (p_x1 + 2, p_y1 - 6)
+    cv2.putText(im, '{:s} {:s}'.format(p_cls, str(j)), p3, \
+                cv2.FONT_HERSHEY_SIMPLEX, .36, (0, 25, 225))
   
     t_cls = "torso"
     p1 = (t_x1, t_y1)
     p2 = (t_x2, t_y2)
     cv2.rectangle(im, p1, p2, (132, 36, 112), 3)
+    p3 = (t_x1 + 2, t_y1 - 6)
+    cv2.putText(im, '{:s} {:s}'.format(t_cls, str(j)), p3, \
+                cv2.FONT_HERSHEY_SIMPLEX, .36, (0, 25, 225))
 
   return im
 
